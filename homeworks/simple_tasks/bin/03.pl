@@ -27,11 +27,15 @@ sub run {
     my ($x, $y, $z) = @_;
     my $min = undef;
     my $max = undef;
-
-    # ...
-    # Вычисление минимума и максимума
-    # ...
-
+    if ($x <= $y) {
+    	$min = $x; 
+    	$max = $y;
+    } else {
+    	$min = $y;
+    	$max = $x;
+    }
+    $min = $z if $min > $z;
+    $max = $z if $max < $z; 
     print "$min, $max\n";
 }
 

@@ -22,10 +22,13 @@ encode('#abc', 1) - печатает '$bcd'
 sub encode {
     my ($str, $key) = @_;
     my $encoded_str = '';
+    my @x = unpack("C*", $str);
+    my $len = @x;
+    for my $i (0 .. ($len-1)) {
+        $x[$i] = ($x[$i] + $key) % 128;
+    }
+    $encoded_str = pack( "C*", @x);
 
-    # ...
-    # Алгоритм шифрования
-    # ...
 
     print "$encoded_str\n";
 }
@@ -44,10 +47,12 @@ decode('$bcd', 1) - печатает '#abc'
 sub decode {
     my ($encoded_str, $key) = @_;
     my $str = '';
-
-    # ...
-    # Алгоритм дешифрования
-    # ...
+    my @y = unpack("C*", $encoded_str);
+    my $len = @y;
+    for my $i (0 .. ($len-1)) {
+        $y[$i] = ($y[$i] - $key + 128) % 128;
+    }
+    $str = pack( "C*", @y);
 
     print "$str\n";
 }
