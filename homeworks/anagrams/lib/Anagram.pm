@@ -3,6 +3,11 @@ package Anagram;
 use 5.010;
 use strict;
 use warnings;
+use DDP;
+use utf8;
+use open qw(:std :utf8);
+
+#use encoding 'cp1251';
 
 =encoding UTF8
 
@@ -38,16 +43,62 @@ anagram(['пятак', 'ЛиСток', 'пятка', 'стул', 'ПяТаК', '
 }
 
 =cut
+sub pars {
+    my $str = shift;
+    my @kek = sort (split //, $str);
+    return \@kek;
+}
+
+sub equalarray {
+    my $arrrefF = shift;
+    my $arrrefS = shift;
+    my $flag = 1;
+    if (scalar @{$arrrefF} == scalar @{$arrrefS}) {
+        for (my $i = 0; $i < scalar @{$arrrefF}; $i++) {
+            $flag = 0 if !($arrrefF->[$i] eq $arrrefS->[$i]);
+        }
+    } else {
+        $flag = 0;
+    }
+    return $flag;
+}
+
+sub deldupl {
+    my %tmp;
+    my @lol = grep {! $tmp{$_}++ } @_;
+    return \@lol;
+}
 
 sub anagram {
     my $words_list = shift;
     my %result;
-
-    #
-    # Поиск анограмм
-    #
-
+    my %parshash;
+    my %tmp;
+    my $count = 0;
+    for (@$words_list) {
+        $_ = lc($_);
+        $parshash{$_} = pars($_);
+    }
+    for my $val (@$words_list) {
+        if (keys %result) {
+            my $iter = 0;
+            for (keys %result) {
+                if (equalarray($parshash{$_}, $parshash{$val})) {
+                    push @{$result{$_}}, $val;
+                    $iter++;
+                }
+            }
+            $result{$val} = [$val] unless $iter;
+        } else {
+            $result{$val} = [$val];
+        }
+        $count++;
+        p $count;
+    }
+    for (keys %result) {
+        $result{$_} = deldupl(@{$result{$_}});
+        delete $result{$_} if (scalar @{$result{$_}} == 1);
+    }
     return \%result;
 }
-
 1;
