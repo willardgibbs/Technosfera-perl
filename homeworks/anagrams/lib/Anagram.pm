@@ -45,8 +45,8 @@ anagram(['пятак', 'ЛиСток', 'пятка', 'стул', 'ПяТаК', '
 =cut
 sub pars {
     my $str = shift;
-    my @kek = sort (split //, $str);
-    return \@kek;
+    my @res = sort (split //, $str);
+    return \@res;
 }
 
 sub equalarray {
@@ -65,8 +65,8 @@ sub equalarray {
 
 sub deldupl {
     my %tmp;
-    my @lol = grep {! $tmp{$_}++ } @_;
-    return \@lol;
+    my @res = grep {! $tmp{$_}++ } @_;
+    return \@res;
 }
 
 sub anagram {
