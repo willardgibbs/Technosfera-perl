@@ -3,6 +3,7 @@ package DeepClone;
 use 5.010;
 use strict;
 use warnings;
+use DDP;
 
 =encoding UTF8
 
@@ -34,13 +35,29 @@ use warnings;
 
 =cut
 
+my $cloned;
+sub clone;
 sub clone {
 	my $orig = shift;
+	my $newclone;
 	my $cloned;
-	# ...
-	# deep clone algorith here
-	# ...
+	if (ref($orig) eq 'HASH'){
+		$cloned = {%{$orig}};
+		while (my ($key, $val) = each(%$orig)){
+			say "$key, $val";
+			$cloned->{$key} = clone($val) unless ($cloned eq $val);
+		}
+	} elsif (ref($orig) eq 'ARRAY') {
+		$cloned = [@{$orig}];
+		for (@$cloned) {
+			say $_;
+			say $cloned;
+			say $orig;
+			$_ = clone($_) unless ($cloned eq $_);
+		}
+	}  elsif (defined $orig) {
+		$cloned = $orig;
+	}
 	return $cloned;
 }
-
 1;
