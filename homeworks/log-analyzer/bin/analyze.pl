@@ -2,8 +2,12 @@
 
 use strict;
 use warnings;
+<<<<<<< HEAD
 use DDP;
 use DateTime;
+=======
+our $VERSION = 1.0;
+>>>>>>> ff902bc9658f2f6589dc37b01b5cae841cd911b0
 
 
 my $filepath = $ARGV[0];
