@@ -46,7 +46,7 @@ sub cloning {
 		}
 		unless ($cycle) {
 			while (my ($key, $val) = each(%$orig)) {
-				$new->{$key} = cloning($val);
+				$new->{$key} = cloning($val, $_[1]);
 			}
 		}		
 	} elsif (ref($orig) eq 'ARRAY') {
@@ -56,7 +56,9 @@ sub cloning {
 			$cycle = 1 if ($_ eq $orig); 
 		}
 		unless ($cycle) {
-			$_ = cloning($_) for (@$new);
+			for my $val (@$new) {
+				$val = cloning($val, $_[1]);
+			}
 		}
 	} elsif (ref($orig)) {
 		$_[1] = 1;

@@ -182,13 +182,10 @@ PERL_ARCHIVEDEP    =
 PERL_ARCHIVE_AFTER = 
 
 
-TO_INST_PM = lib/DeepClone.pm \
-	lib/lol.pl
+TO_INST_PM = lib/DeepClone.pm
 
 PM_TO_BLIB = lib/DeepClone.pm \
-	blib/lib/DeepClone.pm \
-	lib/lol.pl \
-	blib/lib/lol.pl
+	blib/lib/DeepClone.pm
 
 
 # --- MakeMaker platform_constants section:
@@ -473,7 +470,7 @@ realclean_subdirs :
 # Delete temporary files (via clean) and also delete dist files
 realclean purge ::  clean realclean_subdirs
 	- $(RM_F) \
-	  $(MAKEFILE_OLD) $(FIRST_MAKEFILE) 
+	  $(FIRST_MAKEFILE) $(MAKEFILE_OLD) 
 	- $(RM_RF) \
 	  $(DISTVNAME) 
 
@@ -832,8 +829,7 @@ ppd :
 
 pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', q[$(PM_FILTER)], '\''$(PERM_DIR)'\'')' -- \
-	  lib/DeepClone.pm blib/lib/DeepClone.pm \
-	  lib/lol.pl blib/lib/lol.pl 
+	  lib/DeepClone.pm blib/lib/DeepClone.pm 
 	$(NOECHO) $(TOUCH) pm_to_blib
 
 
