@@ -52,7 +52,7 @@ sub equalarray {
     my $arrrefS = shift;
     my $flag = 1;
     if (scalar @{$arrrefF} == scalar @{$arrrefS}) {
-        for (my $i = 0; $i < scalar @{$arrrefF}; $i++) {
+        for my $i (0..(@{$arrrefF}-1)) {
             $flag = 0 if !($arrrefF->[$i] eq $arrrefS->[$i]);
         }
     } else {
@@ -72,7 +72,7 @@ sub anagram {
     my %tmp;
     my %parshash;
     my %result;
-    my $words_list = [@$kek];#мб из-за use constant в тесте
+    my $words_list = [@$kek];
     for my $val (@$words_list) {
         $val = lc decode('utf-8', $val);
         $parshash{$val} = pars($val);
@@ -100,6 +100,5 @@ sub anagram {
         push @{$result{$temp}}, encode('utf-8', $_) for (@$value);
     } 
     return \%result;
-} 
-#anagram([ qw(пятка слиток пятак ЛиСток стул ПяТаК тяпка столик слиток) ]);
+}
 1;

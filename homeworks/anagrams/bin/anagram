@@ -3,8 +3,6 @@
 use 5.010;  # for say, given/when
 use strict;
 use warnings;
-use utf8;
-use open qw(:std :utf8);
 
 BEGIN{
 	if ($] < 5.018) {
