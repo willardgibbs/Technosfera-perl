@@ -36,28 +36,32 @@ use DDP;
 =cut
 
 my $cloned;
+my $flag = 0;
 sub clone;
 sub clone {
 	my $orig = shift;
-	my $newclone;
-	my $cloned;
+	my $new = $orig;  
 	if (ref($orig) eq 'HASH'){
-		$cloned = {%{$orig}};
+		$new = {%{$orig}};
+		my $cycle = 0;
 		while (my ($key, $val) = each(%$orig)){
-			say "$key, $val";
-			$cloned->{$key} = clone($val) unless ($cloned eq $val);
+			$cycle = 1 if ($val eq $orig);
 		}
+		unless ($cycle) {
+			while (my ($key, $val) = each(%$orig)) {
+				$new->{$key} = clone($val);
+			}
+		}		
 	} elsif (ref($orig) eq 'ARRAY') {
-		$cloned = [@{$orig}];
-		for (@$cloned) {
-			say $_;
-			say $cloned;
-			say $orig;
-			$_ = clone($_) unless ($cloned eq $_);
+		$new = [@{$orig}];
+		my $cycle = 0;
+		for (@$new) {
+			$cycle = 1 if ($_ eq $orig); 
 		}
-	}  elsif (defined $orig) {
-		$cloned = $orig;
-	}
-	return $cloned;
+		unless ($cycle) {
+			$_ = clone($_) for (@$new);
+		}
+	} 
+	return $new;
 }
 1;

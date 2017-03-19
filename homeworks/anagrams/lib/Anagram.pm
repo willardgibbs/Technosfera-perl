@@ -6,6 +6,7 @@ use warnings;
 use DDP;
 use utf8;
 use open qw(:std :utf8);
+use Data::Dumper;
 
 #use encoding 'cp1251';
 
@@ -70,16 +71,16 @@ sub deldupl {
 }
 
 sub anagram {
-    my $words_list = shift;
+    my $kek = shift;
+    #my $kek = [ qw(пятка слиток пятак ЛиСток стул ПяТаК тяпка столик слиток) ];
     my %result;
     my %parshash;
     my %tmp;
     my $count = 0;
-    for (@$words_list) {
-        $_ = lc($_);
-        $parshash{$_} = pars($_);
-    }
+    my $words_list = [@$kek];
     for my $val (@$words_list) {
+        $val = lc($val);
+        $parshash{$val} = pars($val);
         if (keys %result) {
             my $iter = 0;
             for (keys %result) {
@@ -92,13 +93,15 @@ sub anagram {
         } else {
             $result{$val} = [$val];
         }
-        $count++;
-        p $count;
     }
     for (keys %result) {
         $result{$_} = deldupl(@{$result{$_}});
         delete $result{$_} if (scalar @{$result{$_}} == 1);
     }
+    $result{$_} = [sort @{$result{$_}}] for (keys %result);
+    #my $lol = Data::Dumper->new([ \%result ])->Purity(1)->Terse(1)->Indent(0)->Sortkeys(1)->Dump;
+    #p $lol;
     return \%result;
-}
+} 
+#anagram();
 1;
