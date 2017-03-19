@@ -35,11 +35,8 @@ use DDP;
 
 =cut
 
-my $cloned;
-my $flag = 0;
-sub clone;
-sub clone {
-	my $orig = shift;
+sub cloning {
+	my $orig = $_[0];
 	my $new = $orig;  
 	if (ref($orig) eq 'HASH'){
 		$new = {%{$orig}};
@@ -49,7 +46,7 @@ sub clone {
 		}
 		unless ($cycle) {
 			while (my ($key, $val) = each(%$orig)) {
-				$new->{$key} = clone($val);
+				$new->{$key} = cloning($val);
 			}
 		}		
 	} elsif (ref($orig) eq 'ARRAY') {
@@ -59,9 +56,21 @@ sub clone {
 			$cycle = 1 if ($_ eq $orig); 
 		}
 		unless ($cycle) {
-			$_ = clone($_) for (@$new);
+			$_ = cloning($_) for (@$new);
 		}
-	} 
+	} elsif (ref($orig)) {
+		$_[1] = 1;
+	}
 	return $new;
+}
+sub clone {
+	my $orig = shift;
+	my $flag = 0;
+	my $result = cloning($orig, $flag);
+	if ($flag){
+		return undef;
+	} else {
+		return $result;
+	}
 }
 1;

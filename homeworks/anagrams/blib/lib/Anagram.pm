@@ -3,10 +3,7 @@ package Anagram;
 use 5.010;
 use strict;
 use warnings;
-use DDP;
-use utf8;
-use open qw(:std :utf8);
-use Data::Dumper;
+use Encode qw(encode decode);
 
 #use encoding 'cp1251';
 
@@ -72,36 +69,37 @@ sub deldupl {
 
 sub anagram {
     my $kek = shift;
-    #my $kek = [ qw(пятка слиток пятак ЛиСток стул ПяТаК тяпка столик слиток) ];
-    my %result;
-    my %parshash;
     my %tmp;
-    my $count = 0;
-    my $words_list = [@$kek];
+    my %parshash;
+    my %result;
+    my $words_list = [@$kek];#мб из-за use constant в тесте
     for my $val (@$words_list) {
-        $val = lc($val);
+        $val = lc decode('utf-8', $val);
         $parshash{$val} = pars($val);
-        if (keys %result) {
+        if (keys %tmp) {
             my $iter = 0;
-            for (keys %result) {
+            for (keys %tmp) {
                 if (equalarray($parshash{$_}, $parshash{$val})) {
-                    push @{$result{$_}}, $val;
+                    push @{$tmp{$_}}, $val;
                     $iter++;
                 }
             }
-            $result{$val} = [$val] unless $iter;
+            $tmp{$val} = [$val] unless $iter;
         } else {
-            $result{$val} = [$val];
+            $tmp{$val} = [$val];
         }
     }
-    for (keys %result) {
-        $result{$_} = deldupl(@{$result{$_}});
-        delete $result{$_} if (scalar @{$result{$_}} == 1);
+    for (keys %tmp) {
+        $tmp{$_} = deldupl(@{$tmp{$_}});
+        delete $tmp{$_} if (scalar @{$tmp{$_}} == 1);
     }
-    $result{$_} = [sort @{$result{$_}}] for (keys %result);
-    #my $lol = Data::Dumper->new([ \%result ])->Purity(1)->Terse(1)->Indent(0)->Sortkeys(1)->Dump;
-    #p $lol;
+    $tmp{$_} = [sort @{$tmp{$_}}] for (keys %tmp);
+    while (my ($key, $value) = each %tmp) {
+        my $temp = encode('utf-8', $key);
+        $result{$temp} = [];
+        push @{$result{$temp}}, encode('utf-8', $_) for (@$value);
+    } 
     return \%result;
 } 
-#anagram();
+#anagram([ qw(пятка слиток пятак ЛиСток стул ПяТаК тяпка столик слиток) ]);
 1;
