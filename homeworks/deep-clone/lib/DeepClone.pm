@@ -42,7 +42,7 @@ sub cloning {
 		$new = {%{$orig}};
 		my $cycle = 0;
 		while (my ($key, $val) = each(%$orig)){
-			$cycle = 1 if ($val eq $orig);
+			$cycle = 1 if (defined $val and ($val eq $orig));
 		}
 		unless ($cycle) {
 			while (my ($key, $val) = each(%$orig)) {
@@ -53,7 +53,7 @@ sub cloning {
 		$new = [@{$orig}];
 		my $cycle = 0;
 		for (@$new) {
-			$cycle = 1 if ($_ eq $orig); 
+			$cycle = 1 if (defined $_ and ($_ eq $orig));
 		}
 		unless ($cycle) {
 			for my $val (@$new) {
