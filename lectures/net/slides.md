@@ -22,23 +22,15 @@ layout:false
 # Содержание
 
 * Модель OSI
-* TCP/IP и UDP
-* Работа операционной системы
-    - Паралеллизм и псевдопаралеллизм
-    - Состояние процесса и переключение контекста
-    - Степень многозадачности
-    - Системный вызов
-    - Блокирующие операции ввода-вывода
-* Обработка N параллельных соединений
-    - accept + fork
-    - C10k
-    - Неблокирующие операции ввода-вывода
-    - Событийный цикл
+* TCP/IP
+* TCP Server & Client
+* UDP Server & Client
+* Forking server
+* Состояние процесса и переключение контекста
+* Блокирующие операции ввода-вывода
+* Event loop
+* Замыкания
 * AnyEvent
-    - Замыкания
-    - Функции с отложенным результатом
-    - Интерфейс AnyEvent
-    - Guard
 * Coro
 
 ---
@@ -194,6 +186,7 @@ socket my $s, AF_INET, SOCK_STREAM, IPPROTO_TCP;
 my $host = 'search.cpan.org'; my $port = 80;
 my $addr = gethostbyname $host;
 my $sa = sockaddr_in($port, $addr);
+connect($s, $sa);
 ```
 
 ```perl
@@ -241,6 +234,7 @@ socket my $s, AF_INET, SOCK_STREAM, IPPROTO_TCP;
 my $host = 'search.cpan.org'; my $port = 80;
 my $addr = gethostbyname $host;
 my $sa = sockaddr_in($port, $addr);
+connect($s, $sa);
 ```
 
 ```perl
@@ -266,6 +260,7 @@ socket my $s, AF_INET, SOCK_STREAM, IPPROTO_TCP;
 my $host = 'search.cpan.org'; my $port = 80;
 my $addr = gethostbyname $host;
 my $sa = sockaddr_in($port, $addr);
+connect($s, $sa);
 ```
 
 ```perl
@@ -485,6 +480,7 @@ while (`accept` my $cln, $srv) {
         while (<$cln>) {
             print {$cln} $_;
         }
+        exit;
     }
 }
 ```
@@ -1636,6 +1632,89 @@ http_request
 
 ---
 
+# AnyEvent::Socket: client
+
+```perl
+use AnyEvent::Socket;
+
+tcp_connect "search.cpan.org", 80, sub {
+    if (my $fh = shift) {
+        syswrite $fh, "GET / HTTP/1.0\n\n";
+        ...
+    }
+    else {
+        warn "Connect failed: $!";
+    }
+};
+
+AE::cv->recv;
+```
+
+---
+
+# AnyEvent::Socket: server
+
+```perl
+use AnyEvent::Socket;
+
+tcp_server "0.0.0.0", 1234, sub {
+    my $fh = shift;
+    # Client connected ...
+    ...
+};
+
+AE::cv->recv;
+```
+
+---
+
+# AnyEvent::Socket + Handle
+
+```perl
+use AnyEvent::Socket;
+
+tcp_server "0.0.0.0", 1234, sub {
+    my $fh = shift;
+    my $h = AnyEvent::Handle->new(
+        fh => $fh,
+    );
+    $h->on_error(sub {
+        $h->destroy;
+    });
+    $h->push_read(line => sub {
+        $h->push_write($_[1]);
+    });
+};
+
+AE::cv->recv;
+```
+
+---
+
+# AnyEvent::Socket + Handle
+
+```perl
+use AnyEvent::Socket;
+
+tcp_server "0.0.0.0", 1234, sub {
+    my $fh = shift;
+    my $h = AnyEvent::Handle->new(
+        fh => $fh,
+    );
+*   $h->timeout(10);
+    $h->on_error(sub {
+        $h->destroy;
+    });
+    $h->push_read(line => sub {
+        $h->push_write($_[1]);
+    });
+};
+
+AE::cv->recv;
+```
+
+---
+
 ```perl
 http_request 1..., sub {
     http_request 2..., sub {
@@ -1862,14 +1941,21 @@ for(1..10) {
 # Домашнее задание 1
 
 Необходимо написать краулер с использованием `AnyEvent` или `Coro`
+
+https://github.com/Nikolo/Technosfera-perl/tree/master/homeworks/crawler
+
+* На вход подаётся URL и фактор паралльности.
+
 Требования к роботу:
 
 * Собрать с сайта все ссылки на уникальные страницы
 * Для каждой найденной ссылки выполнить запрос HEAD
 * Если содержимое text/html, то выполнить запрос GET
 * Для каждой скачанной страницы запомнить её размер
-* Если страниц более `10000`, собрать максимум `10000` уникальных ссылок
-* Не уходить с сайта на другие сайты и за пределы пути URL
+* Если страниц более `1000`, собрать максимум `1000` уникальных ссылок
+* Относительные ссылки превращать в абсолютные.
+* Из сылок должны быть вырезаны теги привязки
+* Обрабатывать (запрашивать) только ссылки, которые начинаются на URL
 * Вывести `Top-10` страниц по размеру и суммарный размер всех страниц
 
 Модули, которые могут помочь в решении: `URI`, `AnyEvent::HTTP`, `Coro::LWP`, `Web::Query`. `Web::Query` допустимо использовать только как парсер документов, но не как инструмент для скачивания
@@ -1908,15 +1994,40 @@ say $uri;
 
 Необходимо написать прокси-сервер с использованием `AnyEvent` или `Coro`
 
+* Реализовать TCP-сервер с текстовым протоколом
+* Поддержать команды URL, HEAD, GET, FIN
+* Протокол на вход сессионный. URL ассоциируется с соединением.
+* Команда HEAD делает HEAD запрос на запомненый URL и возвращает заголовки
+* Команда GET делает GET запрос на запомненый URL и возвращает тело
+* На команду FIN нужно закрыть соединение и прекратить любую работу
 
+.left[
+```perl
+URL http://mail.ru\n
+HEAD\n
 
+GET\n
+
+FIN\n
+```
+]
+.right[
+```perl
+OK\n
+OK `16`\n
+`Header1: Value1\n`
+OK `4`\n
+`body`
+OK\n
+```
+Connection closed
+]
 
 ---
-class:lastpage
+class:lastpage title
 
-# Оставьте отзыв на портале
+# Спасибо за внимание!
 
-Спасибо за внимание!
+## Оставьте отзыв
 
-Mons Anderson &lt;<mons@cpan.org>&gt;
-
+.teacher[![teacher]()]
