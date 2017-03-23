@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use DDP;
+use POSIX ();
 our $VERSION = 1.0;
 
 
@@ -22,7 +23,7 @@ sub parse_file {
     while (my $log_line = <$fd>) {
         if ($log_line) {
             $log_line =~ /^(\d+\.\d+\.\d+\.\d+)\ \[([^\]]+)\]\ ".+"\ (\d+)\ (\d+)\ \"[^\"]+\"\ \"[^\"]+\"\ \"(.+)\"\n/;
-            push @$resarr, {ip => $1, time => $2, status => $3, data => ($4 / 1000), koef => $5};
+            push @$resarr, {ip => $1, time => $2, status => $3, data => $4/1024, koef => $5};
         }
     }
     for (@$resarr) {
@@ -53,14 +54,14 @@ sub total {
         }
     }
     my $totalavg = $totalcounttime / $totaltime;
-    $totalstr = "total"."\t".$totalcount."\t".sprintf("%.2f", $totalavg)."\t".sprintf("%.0f", $totaldata);
-    $totalstr .= "\t".sprintf("%.0f",$totalstatus{$_}) for (@$stat);
+    $totalstr = "total"."\t".$totalcount."\t".sprintf("%.2f", $totalavg)."\t".POSIX::floor($totaldata);
+    $totalstr .= "\t".POSIX::floor($totalstatus{$_}) for (@$stat);
     print "$totalstr\n";
 }
 
 sub head {
     my $stat = shift;
-    my $headstr = "IP\tcount\tavg\tdata"            ;
+    my $headstr = "IP\tcount\tavg\tdata";
     $headstr .= "\t".$_ for (@$stat);
     print "$headstr\n";
 }
@@ -73,9 +74,9 @@ sub print_result {
         my $ipstr .= $mass[$i];
         $ipstr .= "\t".$reshash->{$mass[$i]}->{count};
         $ipstr .= "\t".sprintf("%.2f", ($reshash->{$mass[$i]}->{sum_min_count} / $reshash->{$mass[$i]}->{mincount}));
-        $ipstr .= "\t".sprintf("%.0f", $reshash->{$mass[$i]}->{data});
+        $ipstr .= "\t".POSIX::floor($reshash->{$mass[$i]}->{data});
         for my $val (@$stat) {
-            $ipstr .= "\t".sprintf("%.0f", $reshash->{$mass[$i]}->{$val});
+            $ipstr .= "\t".POSIX::floor($reshash->{$mass[$i]}->{$val});
         } 
         print "$ipstr\n";
     }
@@ -119,9 +120,9 @@ sub make_result {
             $reshash->{$val1->{ip}}->{$val} += $val1->{data} if ($val == $val1->{status});
         }
     }
-    for my $val (@$result) {
-        $reshash->{$val->{ip}}->{sum_min_count} += $reshash->{$val->{ip}}->{formin} unless (defined $reshash->{$val->{ip}}->{sum_min_count});
-        $reshash->{$val->{ip}}->{mincount} = 1 unless (defined $reshash->{$val->{ip}}->{mincount});
+    for (keys %$reshash) {
+        $reshash->{$_}->{sum_min_count} += $reshash->{$_}->{formin} unless (defined $reshash->{$_}->{sum_min_count});
+        $reshash->{$_}->{mincount} = 1 unless (defined $reshash->{$_}->{mincount});
     }
     return $reshash;
 }
