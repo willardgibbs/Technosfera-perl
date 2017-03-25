@@ -9,15 +9,33 @@ use JSON::XS;
 no warnings 'experimental::smartmatch';
 
 sub mode2s {
-	# Тут был полезный код для распаковки численного представления прав доступа
-	# но какой-то злодей всё удалил.
+
 }
 
 sub parse {
 	my $buf = shift;
-	
-	# Тут было готовое решение задачи, но выше упомянутый злодей добрался и
-	# сюда. Чтобы тесты заработали, вам предстоит написать всё заново.
-}
+	my $lol = "The blob should start from 'D' or 'Z'";
+	my $list = {};
+	my $first = unpack("A", $buf);
+	my $args;
+	if ($first eq "Z") {
+		return $list;
+	} elsif (not $first eq 'D') {
+		die "The blob should start from 'D' or 'Z'";
+	}
 
+
+
+	# if ($first eq "D") {
+	# 	my ($type, $name) = unpack("nU", $buf);
+	# 	$list->{type} = "directory";
+	# 	$list->{name} = $name;
+	# };
+	# if ($first eq "F") {
+	# 	my ($type, $name) = unpack("nU", $buf);
+	# 	$list->{type} = "file";
+	# 	$list->{name} = $name;
+	# };
+
+}
 1;
