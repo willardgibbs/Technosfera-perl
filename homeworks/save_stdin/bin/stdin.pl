@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Getopt::Long;
 
-my $file;
+my $file = "--file=1";
 GetOptions("file=s" => \$file);
 
 open(my $fh, ">", $file);
