@@ -9,7 +9,7 @@ our $VERSION = 1.0;
 
 
 my $filepath = $ARGV[0];
-die "USAGE:\n$0 <log-file.bz2>\n"  unless $filepath;
+die "USAGE:\n$0 <log-file>\n"  unless $filepath;
 die "File '$filepath' not found\n" unless -f $filepath;
 
 my $parsed_data = parse_file($filepath);
@@ -18,8 +18,22 @@ exit;
 
 sub parse_file {
     my $file = shift;
+<<<<<<< HEAD
     my $resarr;
     open my $fd, "-|", "bunzip2 < $file" or die "Can't open '$file': $!";
+=======
+
+    # you can put your code here
+
+    my $fd;
+    if ($file =~ /\.bz2$/) {
+        open $fd, "-|", "bunzip2 < $file" or die "Can't open '$file' via bunzip2: $!";
+    } else {
+        open $fd, "<", $file or die "Can't open '$file': $!";
+    }
+
+    my $result;
+>>>>>>> 1aa0d32ce2da91b118709427adcf836e0956046e
     while (my $log_line = <$fd>) {
         if ($log_line) {
             $log_line =~ /^(\d+\.\d+\.\d+\.\d+)\ \[([^\]]+)\]\ ".+"\ (\d+)\ (\d+)\ \"[^\"]+\"\ \"[^\"]+\"\ \"(.+)\"\n/;
