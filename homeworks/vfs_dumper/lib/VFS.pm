@@ -14,28 +14,32 @@ sub mode2s {
 
 sub parse {
 	my $buf = shift;
-	my $lol = "The blob should start from 'D' or 'Z'";
+	my $str = "The blob should start from 'D' or 'Z'";
 	my $list = {};
 	my $first = unpack("A", $buf);
-	my $args;
 	if ($first eq "Z") {
 		return $list;
-	} elsif (not $first eq 'D') {
-		die "The blob should start from 'D' or 'Z'";
 	}
-
-
+	unless ($first eq 'D') {
+		die $str;
+	}
+	my $second = unpack("AA", $buf);
+	p $second;
+	unless ($second eq "DI") {
+		die $str;
+	}
+	# my $lol = unpack();
 
 	# if ($first eq "D") {
 	# 	my ($type, $name) = unpack("nU", $buf);
 	# 	$list->{type} = "directory";
 	# 	$list->{name} = $name;
-	# };
+	# }
 	# if ($first eq "F") {
 	# 	my ($type, $name) = unpack("nU", $buf);
 	# 	$list->{type} = "file";
 	# 	$list->{name} = $name;
-	# };
+	# }
 
 }
 1;
