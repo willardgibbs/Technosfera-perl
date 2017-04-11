@@ -12,6 +12,7 @@ sub import {
 	my $flag = 1;
 	my @mass = @_;
 	my $caller = caller;
+	p $caller;
 	for my $i (1 .. (@mass-1)) {
 		if ($flag == 1) { # по четности $i
 			invalid($mass[$i], 0);
