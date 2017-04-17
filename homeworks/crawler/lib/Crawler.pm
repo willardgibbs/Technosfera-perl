@@ -83,10 +83,11 @@ sub run {
 	my @kek = ();
 	push @kek, URI->new_abs($_, $base) for (@lol);
 	print {$fh} join "\n", @kek;
+
 	for my $i (@kek) {
 		unless (exists($hash->{$i}) or keys %$hash == 1000) {
 			run($i, 1);
-			p $hash; 
+			p $hash;
 		}
 	}
 
