@@ -1,8 +1,10 @@
-package Local::Reducer::Sum;
+package Local::Reducer::MaxDiff;
 
 use strict;
 use warnings;
 use DDP;
+
+use base qw(Local::Reducer);
 
 sub new {
 	my ($class, %params) = @_;

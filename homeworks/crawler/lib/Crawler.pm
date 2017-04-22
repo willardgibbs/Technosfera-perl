@@ -4,6 +4,7 @@ use 5.010;
 use strict;
 use warnings;
 
+use AnyEvent;
 use AnyEvent::HTTP;
 use Web::Query;
 use URI;
@@ -50,58 +51,83 @@ sub top_10 {
 	return $total_size, @top10_list;
 }
 
-sub myrequests {
+my $get = sub {
 	my $start_page = shift;
-	my $ref_on_hrefs;
-    STDOUT->autoflush;
-	my $exit_wait = AnyEvent->condvar;
-	my $exit_wait1 = AnyEvent->condvar;
-	my $flag;
-
-	my $handle = http_request
-		HEAD => $start_page,
-		timeout => 1,
-		sub {
-			my ($body, $hdr) = @_;
-			if ($hdr->{Status} == 200) {
-				$flag = $hdr->{"content-type"} =~ /text\/html/;
-			}
-			$exit_wait->send;
-		};
-	$exit_wait->recv;
-	return unless $flag;
-
+	my $ref_on_hrefs = [];
 	my $handle1 = http_request
 		GET => $start_page,
 		timeout => 1,
 		sub {
+			say "lol";
 			my ($body, $hdr) = @_;
 			if ($hdr->{Status} == 200) {
 				$result->{$start_page} = length(Encode::encode_utf8($body));
 				@$ref_on_hrefs = $body =~ /href="(\/[^#"][^"]+)"/g;
 			}
-			$exit_wait1->send;
 		};
-	$exit_wait1->recv;
+	p $ref_on_hrefs;
 	return $ref_on_hrefs;
+};
+
+sub head {
+	my $cb = shift;
+	my $start_page = shift;
+	my $flag;
+	my $top_kek;
+	http_request
+		HEAD => $start_page,
+		timeout => 1,
+		$top_kek = sub {
+			my ($body, $hdr) = @_;
+			if ($hdr->{Status} == 200) {
+				if ($flag = $hdr->{"content-type"} =~ /text\/html/) {
+					undef $top_kek;
+					return $cb->($start_page);
+				} else {
+					return;
+				}
+			}
+		};
 }
 
 sub run {
     my ($start_page, $parallel_factor) = @_;
-    $start_page =~ /http\w?:\/\/[^\/]+(\/.+)/;
-	my $url = $1;
 	my $href_inside = [];
-    my $ref_on_hrefs = myrequests($start_page);
-	for (@$ref_on_hrefs) {
-		push @$href_inside, $start_page.$url if ($_ =~ /^$url(.+)$/);
-	};
-	for my $var (@$href_inside) {
-		run($var, 1) unless exists($result->{$var}) or keys %$result == 1000;
-	}
+    my $ref_on_hrefs = [];
+
+    #STDOUT->autoflush;
+
+	my $cv = AE::cv;  
+	$cv->begin;
+	my $next;
+	$next = sub {
+		$start_page =~ /http\w?:\/\/[^\/]+(\/.+)/;
+		my $url = $1;
+		$cv->begin;
+		$ref_on_hrefs = head $start_page, sub {
+			$next->();
+			$cv->end;
+		};
+		p $ref_on_hrefs;
+		# = get($start_page) if head($start_page);
+
+		# for (@$ref_on_hrefs) {
+		# 	push @$href_inside, $start_page.$1 if ($_ =~ /^$url(.+)$/);
+		# }
+		# for my $var (@$href_inside) {
+		# 	return if exists($result->{$var}) or keys %$result == 1000;
+		# }
+
+	}; 
+	$next->() for 1..2;
+	$cv->end; 
+	$cv->recv;
     return top_10($result);
 }
+
 my ($total_size, @top10_list) = run("https://github.com/Nikolo/Technosfera-perl/tree/anosov-crawler", 1);
 my $tmp = int($total_size/1024);
 p $tmp;
 p @top10_list;
+
 1;
