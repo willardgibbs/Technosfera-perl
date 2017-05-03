@@ -2,44 +2,85 @@ package Local::MatrixMultiplier;
 
 use strict;
 use warnings;
+use POSIX qw(sys_wait_h);
+
 
 sub mult {
-    my ($mat_a, $mat_b, $max_child) = @_;
+    my ($mat_a, $mat_b, $max_child) = @_; 
     my $res = [];
-    my $res1 = [];
-    my $res2 = [];
-    for (@{$mat_a}) {
-    	die unless (@{$_} == @{$mat_a});
+
+    check($mat_a, $mat_b);
+
+    my $childs;
+    my $start;
+    my $end;
+    my $interval = int(@{$mat_a}/$max_child);
+
+    for my $i(0..$max_child-1){
+        my ($r, $w);
+        pipe ($r, $w);
+        my $pid = fork();
+        if($pid) {
+            close $w;
+            my ($s,$j) = ($i * $interval - 1, 0);       
+            while (<$r>) {
+                $s++ if $j == 0;
+                $res->[$s][$j] = 0 + $_;
+                $j = ($j + 1) % scalar @{$mat_a};
+            }
+            close $r;
+        }else {
+            close $r;
+            if ($i == $max_child-1) {
+                $start = $interval*$i;
+                $end = @{$mat_a}-1;
+            }else {
+                $start = $i*$interval;
+                $end = ($i + 1)*$interval - 1;
+            }
+
+            calc($res, $mat_a, $mat_b, $start, $end);
+
+            write_part($w, $res, $start, $end, @{$mat_a}-1);
+
+            close $w;   
+            exit;       
+        }
     }
-    for (@{$mat_b}) {
-    	die unless (@{$_} == @{$mat_a});
+    return $res;
+}
+
+sub calc {
+    my ($res, $mat_a, $mat_b, $start, $end) = @_;
+    for my $s ($start..$end) {
+        for my $j (0..@{$mat_a}-1) {
+            $res->[$s][$j] = 0; 
+            for my $k (0..@{$mat_a}-1) {
+                $res->[$s][$j] += $mat_a->[$s][$k] * $mat_b->[$k][$j];  
+            }   
+        }   
+    }   
+}
+
+sub write_part {
+    my ($w, $res, $start, $end, $last_row) = @_;
+    for my $j ($start..$end) {
+        for my $k (0..$last_row) {
+            print $w "$res->[$j][$k]\n";
+        }
     }
-    my $pid = fork();
-    if ($pid) {
-    	my $first = 0;
-    	my $second = @{$mat_a}/2-1;
-    	for my $i ($first .. $second){
-    		for my $j (0 .. @{$mat_a}-1) {
-    			for my $k (0 .. @{$mat_a}-1) {
-    				$res1->[$i][$j] += $mat_a->[$i][$k] * $mat_b->[$k][$j];
-    			}
-    		}
-    	}
-    	waitpid($pid, 0);
-    } else {
-    	my $first = @{$mat_a}/2;
-    	my $second = @{$mat_a}-1;
-    	for my $i ($first .. $second){
-    		for my $j (0 .. @{$mat_a}-1) {
-    			for my $k (0 .. @{$mat_a}-1) {
-    				$res2->[$i][$j] += $mat_a->[$i][$k] * $mat_b->[$k][$j];
-    			}
-    		}
-    	}
-    	exit;
+}
+
+sub check {
+    my ($mat_a, $mat_b) = @_;
+    my $param = scalar @{$mat_a};
+    die if $param == 0;
+    for my $element (@{$mat_a}) {
+        die if $param != @{$element};   
+    }    
+    for my $element (@{$mat_b}) {
+        die if $param != @{$element};   
     }
-    my @lol = (@$res1, @$res2);
-    return \@lol;
 }
 
 1;
