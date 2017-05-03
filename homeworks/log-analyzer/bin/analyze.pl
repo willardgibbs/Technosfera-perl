@@ -4,9 +4,8 @@ use strict;
 use warnings;
 use DDP;
 use POSIX ();
+use Date::Parse;
 our $VERSION = 1.0;
-
-
 
 my $filepath = $ARGV[0];
 die "USAGE:\n$0 <log-file>\n"  unless $filepath;
@@ -18,59 +17,24 @@ exit;
 
 sub parse_file {
     my $file = shift;
-<<<<<<< HEAD
-    my $resarr;
-    open my $fd, "-|", "bunzip2 < $file" or die "Can't open '$file': $!";
-=======
-
-    # you can put your code here
-
+    my $resarr = [];
     my $fd;
     if ($file =~ /\.bz2$/) {
         open $fd, "-|", "bunzip2 < $file" or die "Can't open '$file' via bunzip2: $!";
     } else {
         open $fd, "<", $file or die "Can't open '$file': $!";
     }
-
-    my $result;
->>>>>>> 1aa0d32ce2da91b118709427adcf836e0956046e
     while (my $log_line = <$fd>) {
         if ($log_line) {
-            $log_line =~ /^(\d+\.\d+\.\d+\.\d+)\ \[([^\]]+)\]\ ".+"\ (\d+)\ (\d+)\ \"[^\"]+\"\ \"[^\"]+\"\ \"(.+)\"\n/;
-            push @$resarr, {ip => $1, time => $2, status => $3, data => $4/1024, koef => $5};
+            $log_line =~ /^(\d+\.\d+\.\d+\.\d+)\ \[([^\]]+)\]\ ".+"\ (\d+)\ (\d+)\ \"[^\"]+\"\ \"[^\"]+\"\ \"(.+)\"/;
+            my $tmp = {ip => $1, time => int(str2time($2) / 60), status => $3, data => $4/1024, koef => $5};
+            $tmp->{koef} = 1 if $tmp->{koef} eq "-";
+            push @$resarr, $tmp;
         }
-    }
-    for (@$resarr) {
-        $_->{time} =~ /\d+\/\w+\/\d+\:(\d+)\:(\d+)\:\d+\s\+\d+/;
-        $_->{time} = $1*60 + $2;
-        $_->{koef} = 1 if ($_->{koef} eq "-");
     }
     close $fd;
+    @$resarr = sort {$a->{time} <=> $b->{time}} @$resarr;
     return $resarr;
-}
-
-sub total {
-    my $reshash = shift;
-    my $stat = shift;
-    my $totalstr;
-    my $totalcount;
-    my %totalstatus;
-    my $totaldata;
-    my $totaltime;
-    my $totalcounttime;
-    for my $val1 (keys %{$reshash}) {
-        $totalcount += $reshash->{$val1}->{count};
-        $totaldata += $reshash->{$val1}->{data} if ($reshash->{$val1}->{data});
-        $totalcounttime += $reshash->{$val1}->{sum_min_count};
-        $totaltime += $reshash->{$val1}->{mincount};
-        for my $val (@$stat) {
-            $totalstatus{$val} += $reshash->{$val1}->{$val};
-        }
-    }
-    my $totalavg = $totalcounttime / $totaltime;
-    $totalstr = "total"."\t".$totalcount."\t".sprintf("%.2f", $totalavg)."\t".POSIX::floor($totaldata);
-    $totalstr .= "\t".POSIX::floor($totalstatus{$_}) for (@$stat);
-    print "$totalstr\n";
 }
 
 sub head {
@@ -78,22 +42,6 @@ sub head {
     my $headstr = "IP\tcount\tavg\tdata";
     $headstr .= "\t".$_ for (@$stat);
     print "$headstr\n";
-}
-
-sub print_result {
-    my $reshash = shift;
-    my $stat = shift;
-    my @mass = sort { $reshash->{$b}->{count} <=> $reshash->{$a}->{count} } keys %$reshash;
-    for my $i (0..9) {
-        my $ipstr .= $mass[$i];
-        $ipstr .= "\t".$reshash->{$mass[$i]}->{count};
-        $ipstr .= "\t".sprintf("%.2f", ($reshash->{$mass[$i]}->{sum_min_count} / $reshash->{$mass[$i]}->{mincount}));
-        $ipstr .= "\t".POSIX::floor($reshash->{$mass[$i]}->{data});
-        for my $val (@$stat) {
-            $ipstr .= "\t".POSIX::floor($reshash->{$mass[$i]}->{$val});
-        } 
-        print "$ipstr\n";
-    }
 }
 
 sub allstatus {
@@ -111,32 +59,76 @@ sub allstatus {
     return \@sortstat;
 }
 
+sub total {
+    my $reshash = shift;
+    my $stat = shift;
+    my $totalstr;
+    my $totalcount;
+    my %totalstatus;
+    my $totaldata;
+    my $totaltime;
+    my $totalcounttime;
+    for my $val1 (keys %{$reshash}) {
+        $totalcount += $reshash->{$val1}->{count};
+        $totaldata += $reshash->{$val1}->{data} if ($reshash->{$val1}->{data});
+        $totalcounttime += $_ for @{$reshash->{$val1}->{mincount_arr}};
+        $totaltime += $reshash->{$val1}->{min_amount};
+        for my $val (@$stat) {
+            $totalstatus{$val} += $reshash->{$val1}->{$val};
+        }
+    }
+    my $totalavg = $totalcounttime / $totaltime;
+    $totalstr = "total"."\t".$totalcount."\t".sprintf("%.2f", $totalavg)."\t".POSIX::floor($totaldata);
+    $totalstr .= "\t".POSIX::floor($totalstatus{$_}) for (@$stat);
+    print "$totalstr\n";
+}
+
+sub print_result {
+    my $reshash = shift;
+    my $stat = shift;
+    my $n = shift;
+    my @mass = sort { $reshash->{$b}->{count} <=> $reshash->{$a}->{count} } keys %{$reshash};
+    for my $i (0..($n-1)) {
+        my $tmp = 0;
+        my $ipstr .= $mass[$i];
+        $ipstr .= "\t".$reshash->{$mass[$i]}->{count};
+        $tmp += $_ for @{$reshash->{$mass[$i]}->{mincount_arr}};
+        $ipstr .= "\t".sprintf("%.2f", ($tmp / $reshash->{$mass[$i]}->{min_amount}));
+        $ipstr .= "\t".POSIX::floor($reshash->{$mass[$i]}->{data});
+        for my $val (@$stat) {
+            $ipstr .= "\t".POSIX::floor($reshash->{$mass[$i]}->{$val});
+        } 
+        print "$ipstr\n";
+    }
+}
+
 sub make_result {
     my $result = shift;
     my $stat = shift;
     my $reshash;
+    my $tmp_fortime;
     for my $val1 (@$result) {
+        $reshash->{$val1->{ip}}->{mincount_arr} = [] unless defined($reshash->{$val1->{ip}}->{mincount_arr});
         $reshash->{$val1->{ip}}->{count} += 1;
         $reshash->{$val1->{ip}}->{data} += $val1->{data}*$val1->{koef} if ($val1->{status} eq "200");
-        $reshash->{$val1->{ip}}->{date} = $val1->{time} unless (defined $reshash->{$val1->{ip}}->{date});
-
-        if ($val1->{time} eq $reshash->{$val1->{ip}}->{date}) {
-            $reshash->{$val1->{ip}}->{formin} += 1;
+        if (defined($reshash->{$val1->{ip}}->{time})) {
+            if ($val1->{time} > $reshash->{$val1->{ip}}->{time} + 1) {
+                push @{$reshash->{$val1->{ip}}->{mincount_arr}}, $tmp_fortime;
+                $tmp_fortime = 0;
+                $reshash->{$val1->{ip}}->{time} = $val1->{time};
+                $reshash->{$val1->{ip}}->{min_amount}++;
+            } else {
+                $tmp_fortime++;
+            }
         } else {
-            $reshash->{$val1->{ip}}->{date} = $val1->{time};
-            $reshash->{$val1->{ip}}->{mincount} +=1; 
-            $reshash->{$val1->{ip}}->{sum_min_count} += $reshash->{$val1->{ip}}->{formin};
-            $reshash->{$val1->{ip}}->{formin} = 1;
+            $reshash->{$val1->{ip}}->{time} = $val1->{time};
+            $reshash->{$val1->{ip}}->{min_amount}++;
+            $tmp_fortime++;
         }
-
         for my $val (@$stat) {
             $reshash->{$val1->{ip}}->{$val} = 0 unless (defined $reshash->{$val1->{ip}}->{$val});
             $reshash->{$val1->{ip}}->{$val} += $val1->{data} if ($val == $val1->{status});
         }
-    }
-    for (keys %$reshash) {
-        $reshash->{$_}->{sum_min_count} += $reshash->{$_}->{formin} unless (defined $reshash->{$_}->{sum_min_count});
-        $reshash->{$_}->{mincount} = 1 unless (defined $reshash->{$_}->{mincount});
     }
     return $reshash;
 }
@@ -148,6 +140,6 @@ sub report {
     my $reshash = make_result($result, $stat);
     head($stat);
     total($reshash, $stat);
-    print_result($reshash, $stat);
+    print_result($reshash, $stat, 10); #задать кол-во выдаваемых объектов после total
     return;
 }
