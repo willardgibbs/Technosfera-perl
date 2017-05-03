@@ -6,7 +6,7 @@ use Local::Source::Array;
 use Local::Source::Text;
 use Local::Row::JSON;
 use Local::Row::Simple;
-#use DDP;
+use DDP;
 
 =encoding utf8
 

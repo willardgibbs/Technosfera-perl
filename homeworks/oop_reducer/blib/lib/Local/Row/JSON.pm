@@ -2,7 +2,7 @@ package Local::Row::JSON;
 
 use strict;
 use warnings;
-#use DDP;
+use DDP;
 
 sub new {
 	my ($class, %param) = @_;

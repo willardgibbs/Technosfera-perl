@@ -2,7 +2,7 @@ package Local::Reducer::Sum;
 
 use strict;
 use warnings;
-#use DDP;
+use DDP;
 
 sub new {
 	my ($class, %params) = @_;

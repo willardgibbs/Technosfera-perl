@@ -2,7 +2,7 @@ package Local::Reducer::MaxDiff;
 
 use strict;
 use warnings;
-use DDP;
+#use DDP;
 
 use base qw(Local::Reducer);
 
