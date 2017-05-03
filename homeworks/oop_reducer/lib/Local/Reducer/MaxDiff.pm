@@ -13,29 +13,33 @@ sub new {
 
 sub reduce_n {
 	my ($self, $n) = @_;
-	my $sum;
-	for my $i ( $self->{initial_value} .. ($n-1)) {
+	$self->{max_diff} = 0 unless defined($self->{max_diff});
+	for my $i ($self->{initial_value} .. ($n-1)) {
 		my $lol = $self->{row_class}->new( str => $self->{source}->next);
-		$sum += $lol->{$self->{field}} if defined($lol->{$self->{field}});
+		if (defined($lol->{$self->{top}}) and defined($lol->{$self->{bottom}})) {
+			$self->{max_diff} = $lol->{$self->{top}} - $lol->{$self->{bottom}} if $lol->{$self->{top}} =~ /\d+/ and $lol->{$self->{bottom}} =~ /\d+/ and $self->{max_diff} <= $lol->{$self->{top}} - $lol->{$self->{bottom}};
+		}
 	}
 	$self->{initial_value} = $n;
-	$self->{sum} = $sum;
-	return $self->{sum};
+	return $self->{max_diff};
 }
 
 sub reduce_all {
-	my ($self) = @_;
-	for my $i ( $self->{initial_value} .. @{$self->{source}->{array}} - 1) {
-		my $tmp = $self->{row_class}->new( str => $self->{source}->next);
-		$self->{sum} += $tmp->{$self->{field}} if defined($tmp->{$self->{field}}) and $tmp->{$self->{field}} =~ m/^\d+$/;
+	my $self = shift;
+	$self->{max_diff} = 0 unless defined($self->{max_diff});
+	for my $i ( $self->{initial_value} .. @{$self->{source}->{text}} - 1) {
+		my $lol = $self->{row_class}->new( str => $self->{source}->next);
+		if (defined($lol->{$self->{top}}) and defined($lol->{$self->{bottom}})) {
+			$self->{max_diff} = $lol->{$self->{top}} - $lol->{$self->{bottom}} if $lol->{$self->{top}} =~ /\d+/ and $lol->{$self->{bottom}} =~ /\d+/ and $self->{max_diff} <= $lol->{$self->{top}} - $lol->{$self->{bottom}};
+		}
 	}
-	$self->{initial_value} = @{$self->{source}->{array}} - 1;
-	return $self->{sum};
+	$self->{initial_value} = 0;
+	return $self->{max_diff};
 }
 
 sub reduced {
 	my ($self) = @_;
-	return $self->{sum};
+	return $self->{max_diff};
 }
 
 1;
