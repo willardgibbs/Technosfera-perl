@@ -2,9 +2,6 @@ package Local::SocialNetwork;
 
 use strict;
 use warnings;
-#!usr/bin/perl
-use strict;
-use warnings;
 use DDP;
 use DBD::mysql;
 use Data::Dumper;
@@ -24,14 +21,14 @@ sub select10 {
 	if ($name eq "user") {
 		my $tmp = $dbh1->prepare("select first_name, last_name from user limit 10");
 		$tmp->execute();
-		while (my ($lol, $kek) = $tmp->fetchrow_array()) {
-			print "$lol, $kek\n";
+		while (my ($first_name, $last_name) = $tmp->fetchrow_array()) {
+			print "$first_name, $last_name\n";
 		}
 	} else {
 		my $tmp = $dbh1->prepare("select user_id, friend_id from user_relation limit 10");
 		$tmp->execute();
-		while (my ($lol, $kek) = $tmp->fetchrow_array()) {
-			print "$lol, $kek\n";
+		while (my ($user_id, $friend_id) = $tmp->fetchrow_array()) {
+			print "$user_id, $friend_id\n";
 		}
 	}
 }
@@ -39,30 +36,56 @@ sub select10 {
 sub add_in_table {
 	my ($dbh1, $name, $text) = @_;
 	if ($name eq "user") {
-		my $arrref = [];
+		my $counter;
+		my $tmp1 = "insert into user (first_name, last_name) values (";
+		my $tmp = $tmp1;
 		while ($text =~ /\d+\s(\D+)\s(\D+)\s/g) {
-			push @$arrref, "'$1', '$2'";
+			$tmp .= "'$1', '$2'), (";
+			$counter++;
+			if ($counter % 50000 == 0) {
+				substr($tmp, (length($tmp) - 3), 3, "");
+				$dbh1->prepare($tmp)->execute();
+				$dbh1->commit();
+				$tmp = $tmp1;
+				$counter = 0;
+			}
 		}
-		my $tmp = join("), (", @$arrref);
-		$dbh1->prepare("insert into user (first_name, last_name) values (".$tmp.")")->execute();
+		unless ($tmp eq $tmp1) {
+			substr($tmp, (length($tmp) - 3), 3, "");
+			$dbh1->prepare($tmp)->execute();
+			$dbh1->commit();
+		}
 	} else {
-		#my $arrref = [];
+		my $counter;
+		my $tmp1 = "insert into user_relation (user_id, friend_id) values (";
+		my $tmp = $tmp1;
 		while ($text =~ /(\d+)\s(\d+)\s/g) {
-			#$dbh1->prepare("insert into user_relation (user_id, friend_id) values (?, ?)")->execute($1, $2);
-			push @$arrref, "$1, $2";
+			$tmp .= "'$1', '$2'), (";
+			$counter++;
+			if ($counter == 50000) {
+				substr($tmp, (length($tmp) - 3), 3, "");
+				$dbh1->prepare($tmp)->execute();
+				$tmp = $tmp1;
+				$dbh1->commit();
+				$counter = 0;
+			} 
 		}
-		my $tmp = join("), (", @$arrref);
-		$dbh1->prepare("insert into user_relation (user_id, friend_id) values (".$tmp.")")->execute();
+		unless ($tmp eq $tmp1) {
+			substr($tmp, (length($tmp) - 3), 3, "");
+			$dbh1->prepare($tmp)->execute();
+			$dbh1->commit();
+		}
 	}
 }
 
 sub create_table {
 	my ($dbh1, $name)  = @_;
 	if ($name eq "user") {
-		$dbh1->prepare("create table user (id serial, first_name character varying(255), last_name character varying(255))")->execute;
+		$dbh1->prepare("create table user (id serial, first_name character varying(255), last_name character varying(255)) charset utf8")->execute;
 	} else {
-		$dbh1->prepare("create table user_relation (id serial, user_id integer, friend_id integer)")->execute;
+		$dbh1->prepare("create table user_relation (id serial, user_id integer, friend_id integer) charset utf8")->execute;
 	}
+	$dbh1->commit();
 }
 
 sub drop_table {
@@ -72,6 +95,7 @@ sub drop_table {
 	} else {
 		$dbh1->prepare("drop table user_relation")->execute;
 	}
+	$dbh1->commit();
 }
 
 
@@ -87,16 +111,12 @@ create_table($dbh, "user");
 drop_table($dbh, "user_relation");
 create_table($dbh, "user_relation");
 
-# my $user_text = read_zip("etc/user.zip");
 add_in_table($dbh, "user", read_zip("etc/user.zip"));
 #select10($dbh, "user");
 print "The Database user are created\n";
 
-# my $user_relation_text = read_zip("etc/user_relation.zip");
 add_in_table($dbh, "user_relation", read_zip("etc/user_relation.zip"));
 #select10($dbh, "user_relation");
 print "The Database user_relation are created\n";
-
-$dbh->commit();
 
 1;
