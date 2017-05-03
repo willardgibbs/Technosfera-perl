@@ -1,58 +1,91 @@
 package myconst;
-
-use 5.010; 
-use strict;
 use warnings;
 use Scalar::Util 'looks_like_number';
 use DDP;
+use 5.010;
 
-sub import {
-	no strict 'refs';
-	our $str = {};
-	my $flag = 1;
-	my @mass = @_;
-	my $caller = caller;
-	p $caller;
-	for my $i (1 .. (@mass-1)) {
-		if ($flag == 1) { # по четности $i
-			invalid($mass[$i], 0);
-			die "invalid args checked" unless $mass[$i];
-			invalid($mass[$i + 1], 1);
-			if (ref($mass[$i + 1]) eq "HASH") {
-				for my $val (keys %{$mass[$i + 1]}) {
-					*{$caller."::".$val} = sub () {$mass[$i + 1]->{$val}};
-				}
-			} else  {
-				*{$caller."::".$mass[$i]} = sub () {$mass[$i + 1]}; 
+our $VERSION = '1.00';
+
+my @constants;
+
+sub valid {
+	@arr = @_;
+	for my $i (0..$#arr) {
+		if ($i%2 == 0) {
+			if(ref $arr[$i] eq 'HASH' or ref $arr[$i] eq 'ARRAY') {
+				return 0;
+			}elsif (defined $arr[$i]) {
+				return 0 unless $arr[$i]=~/^\w+$/ and not $arr[$i] =~ /^[^a-zA-Z]+$/;	
+			}else {
+				return 0;
 			}
-			$flag = 0;
-		} else {
-			$flag = 1;
+		}else {
+			if (ref $arr[$i] eq 'HASH') {
+				return 0 unless %{$arr[$i]};
+				for (keys %{$arr[$i]}) {
+					return 0 if ref $arr[$i]->{$_} eq 'HASH' or ref $arr[$i]->{$_} eq 'ARRAY';
+					return 0 unless $_=~/^\w+$/ and not $_ =~ /^[^a-zA-Z]+$/;
+				}
+			}elsif (ref $arr[$i] eq 'ARRAY') {
+				return 0;
+			}
 		}
 	}
+	return 1;
 }
-sub invalid {
-	my $inval = shift;
-	my $flag = shift;
-	if ($flag == 0) {
-		if (ref($inval) eq "HASH") {
-			die "invalid args checked";  
-		} elsif (ref($inval) eq "ARRAY") {
-			die "invalid args checked";
-		} elsif (defined $inval) {
-			die "invalid args checked" unless $inval =~ /^\w+$/ and (not ($inval =~ /^[^a-zA-Z]+$/));
-		}
-	} else {
-		if (ref($inval) eq "HASH") {
-			die "invalid args checked" unless %{$inval};
-			for (keys %$inval) {
-				die "invalid args checked" unless $_ =~ /^\w+$/ and not $_ =~ /^[^a-zA-Z]+$/;
-				die "invalid args checked" if ref($inval->{$_}) eq "HASH" or ref($inval->{$_}) eq "ARRAY";
-			} 
-		} elsif (ref($inval) eq "ARRAY") {
-			die "invalid args checked";
+
+sub import{
+	shift;
+	die unless valid(@_);
+	my %hash = @_;
+	my $caller = caller;
+	while (my ($key, $var) = each %hash){
+		if (ref $var eq 'HASH'){
+			push @constants, {
+				value => $var->{$_},
+				name => $_,
+				group => $key
+			} for (keys %{$var});
+		}elsif (ref $var eq ''){
+			push @constants, {value => $var,
+			name => $key,
+			group => 'all'};
+		}else {
+			die;
 		}
 	}
+	for my $iter (@constants){
+		no warnings;#or you will see redefined
+		eval 'sub '.$caller.'::'.$iter->{name}.'(){ return $iter->{value};}';
+	}
+	eval 'sub '.$caller.'::import{
+		shift;
+		@imp = @_;
+		no warnings;#the same
+		my $caller = caller;
+		if (not @imp){
+			eval \'\';
+		}else {
+			for my $get_str (@imp){
+				if($get_str =~ /^:all/){
+					for my $var (@constants){
+						eval \'sub \'.$caller.\'::\'.$var->{name}.\'(){return $var->{value};} \';
+					}
+				}elsif ($get_str =~ /^:/) {
+					my @group_var = grep {":"."$_->{group}" eq $get_str} @constants;
+					for my $var (@group_var) {
+							eval \'sub \'.$caller.\'::\'.$var->{name}.\'(){return $var->{value};} \';
+					}
+				}else{
+					for my $var (@constants){
+						if ($var->{name} eq $get_str){
+							eval \'sub \'.$caller.\'::\'.$var->{name}.\'(){return $var->{value};} \';
+						}
+					}
+				}
+			}
+		}
+	}';
 }
 
 1;
