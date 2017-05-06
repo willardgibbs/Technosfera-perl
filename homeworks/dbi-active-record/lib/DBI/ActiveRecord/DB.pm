@@ -156,6 +156,19 @@ sub insert {
 
 =cut
 
+sub update {
+    my ($self, $obj) = @_;
+
+    my $fields = $obj->meta->fields;
+    my @bind = ();
+    for(@$fields) {
+        my $attr = $obj->meta->get_attribute($_);
+        push @bind, ( $attr->serializer ? $attr->serializer->($obj->$_) : $obj->$_ );
+    }
+    return 1;
+}
+
+
 =head2 delete($obj)
 
 Метод для удаления C<$obj> из БД, вызывающийся из наследников класса C<DBI::ActiveRecord::Object>.
