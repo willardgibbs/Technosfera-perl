@@ -64,9 +64,9 @@ sub file_sys {
 			($buf, my $href_F) = F_parse($buf);
 			push @$fs, $href_F;
 		} elsif ($tmp eq 'I') {
-			$fs->[-1]->{list} = file_sys($buf);
+			($buf, $fs->[-1]->{list}) = file_sys($buf);
 		} elsif ($tmp eq 'U') {
-			return $fs;
+			return $buf, $fs;
 		} elsif ($tmp eq 'Z') {
 			die("Garbage ae the end of the buffer") if ($buf);
 			return $fs;
@@ -85,8 +85,6 @@ sub parse {
 		die "The blob should start from 'D' or 'Z'";
 	}
 	$arref = file_sys($buf);
-	p $arref->[0];
 	return $arref->[0];
 }
-
 1;
