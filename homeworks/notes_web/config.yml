@@ -18,14 +18,14 @@ charset: "UTF-8"
 # simple: default and very basic template engine
 # template_toolkit: TT
 
-template: "simple"
+# template: "simple"
 
-# template: "template_toolkit"
-# engines:
-#   template:
-#     template_toolkit:
-#       start_tag: '<%'
-#       end_tag:   '%>'
+template: "template_toolkit"
+engines:
+  template:
+    template_toolkit:
+      start_tag: '<%'
+      end_tag:   '%>'
 
 # session engine
 #
@@ -50,3 +50,16 @@ template: "simple"
 #      cookie_name: eshop.session
 #      is_secure: 1
 #      is_http_only: 1
+plugins:
+  Database:
+    driver: 'mysql'
+    database: 'notes_web'
+    host: 'localhost'
+    port: '5000'
+    username: 'willardgibbs'
+    password: 'm5vikhee'
+    dbi_params:
+      RaiseError: 1
+      AutoCommit: 1
+    on_connect_do: ["SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'"]
+    lod_queries: 1
