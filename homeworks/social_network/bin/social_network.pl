@@ -25,15 +25,15 @@ my $dbh = DBI->connect("dbi:mysql:dbname=$db_name", $user_name, $password, {Auto
 
 my $friends = $dbh->prepare("SELECT user.first_name, user.last_name FROM user INNER JOIN (SELECT user_relation.friend_id FROM user_relation WHERE user_relation.user_id = $user_id_1) lol ON user.id = lol.friend_id INNER JOIN (SELECT user_relation.friend_id FROM user_relation WHERE user_relation.user_id = $user_id_2) kek ON user.id = kek.friend_id");
 $friends->execute;
-while (my ($lol, $kek) = $friends->fetchrow_array()) {
-	print "$lol $kek\n";
+while (my ($first_name, $last_name) = $friends->fetchrow_array()) {
+	print "$first_name $last_name\n";
 }
 
-my $no_friends = $dbh->prepare("SELECT user.first_name, user.last_name FROM user LEFT OUTER JOIN user_relation ON user.id = user_relation.friend_id");
+my $no_friends = $dbh->prepare("SELECT user.first_name, user.last_name FROM user LEFT OUTER JOIN user_relation ON user.id = user_relation.user_id");
 $no_friends->execute;
 
-while (my ($lol, $kek) = $no_friends->fetchrow_array()) {
-	print "$lol $kek\n";
+while (my ($first_name, $last_name) = $no_friends->fetchrow_array()) {
+	print "$first_name $last_name\n";
 }
 
 
