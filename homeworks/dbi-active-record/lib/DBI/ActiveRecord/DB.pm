@@ -160,11 +160,15 @@ sub update {
     my ($self, $obj) = @_;
 
     my $fields = $obj->meta->fields;
+    my $key_field = $obj->meta->primary_key;
+    my $key_value = $obj->$key_field;
+
     my @bind = ();
     for(@$fields) {
         my $attr = $obj->meta->get_attribute($_);
         push @bind, ( $attr->serializer ? $attr->serializer->($obj->$_) : $obj->$_ );
     }
+    my $last_insert_id = $self->_update($obj->meta->table_name, $key_field, $key_value, \@fields, \@bind);
     return 1;
 }
 

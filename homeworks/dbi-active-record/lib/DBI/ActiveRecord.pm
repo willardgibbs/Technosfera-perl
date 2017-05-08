@@ -107,4 +107,15 @@ Sugar-функция для создания атрибутов, связанн�
 
 =cut
 
+sub has_field {
+    my ($field, %params) = @_;
+    $params{is} = 'rw';
+    $params{trait} = ['DBI::ActiveRecord::Trait::Attribute::Field'];
+    my $meta = caller->meta;
+    $meta->add_atribute(
+        $field => /%params
+    );
+    push @{$meta->fields()}, $field;
+}
+
 1;
