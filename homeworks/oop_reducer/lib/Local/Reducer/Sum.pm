@@ -2,8 +2,8 @@ package Local::Reducer::Sum;
 
 use strict;
 use warnings;
-#use DDP;
-
+# use DDP;
+# use get from Row
 sub new {
 	my ($class, %params) = @_;
 	return bless \%params, $class;

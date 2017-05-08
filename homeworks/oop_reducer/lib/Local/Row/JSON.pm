@@ -3,7 +3,7 @@ package Local::Row::JSON;
 use strict;
 use warnings;
 #use DDP;
-
+# make get, use it for Reducer
 sub new {
 	my ($class, %param) = @_;
 	$param{str} =~ /\{(.*)\}/;

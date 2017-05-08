@@ -2,7 +2,7 @@ package Local::Row::Simple;
 
 use strict;
 use warnings;
-
+# make get, use it for Reducer
 sub new {
 	my ($class, %param) = @_;
 	my @arr = split(",", $param{str});

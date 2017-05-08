@@ -3,7 +3,7 @@ package Local::Reducer::MaxDiff;
 use strict;
 use warnings;
 #use DDP;
-
+# use get from Row
 use base qw(Local::Reducer);
 
 sub new {
