@@ -5,7 +5,7 @@ extends 'DBI::ActiveRecord::DB::SQLite';
 sub _build_connection_params {
     my ($self) = @_;
     return [
-        'dbi:SQLite:dbname=/tmp/muslib.db',
+        'dbi:SQLite:dbname=music_lib;host=localhost:1234',
         'willardgibbs',
         'm5vkhee',
         {

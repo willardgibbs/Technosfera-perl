@@ -5,7 +5,7 @@ extends 'DBI::ActiveRecord::DB::mysql';
 sub _build_connection_params {
     my ($self) = @_;
     return [
-        'dbi:mysql:dbname=/tmp/muslib.db',
+        'dbi:mysql:dbname=music_lib;host=localhost:1234',
         'willardgibbs',
         'm5vkhee',
         {
