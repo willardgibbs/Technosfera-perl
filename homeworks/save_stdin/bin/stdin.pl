@@ -4,16 +4,17 @@ use strict;
 use warnings;
 use Getopt::Long;
 
+
+my $file;
+GetOptions("file=s" => \$file);
+open(my $fh, ">", $file);
+
 $SIG{STOP} = \&ctrl_d;
 $SIG{INT} = \&ctrl_c;
 
 my $flag = 0;
 
-my $file;
-GetOptions("file=s" => \$file);
-
-open(my $fh, ">", $file);
-syswrite (STDOUT , "Get ready", length "Get ready");
+syswrite (STDOUT , "Get ready\n", length "Get ready\n");
 while(<>) {	
 	syswrite ($fh, $_, length $_);
 }
@@ -48,5 +49,6 @@ sub ctrl_c {
 
 sub ctrl_d {
 	writenow();
+	print STDERR "lol";
     exit;
 }
