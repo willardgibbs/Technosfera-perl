@@ -1,18 +1,9 @@
-<!doctype html>
-<head>
-    <title>Auth</title>
-</head>
-
-<html>
-<body>
-    <!-- Авторизация -->
-    <div class="b-auth b-block">
-        <h2>Auth</h2>
-        <form method = "post">
-            <p><input type="text" name="username" placeholder="username" /></p>
-            <p><input type="password" name="password" placeholder="password" /></p>
-            <p><input type="submit" value="Login" /></p>
-        </form>
-    </div>
-</body>
-</html>
+<div class="b-auth b-block">
+    <h2>Authorization</h2>
+    <form method = "post" onsubmit="document.getElementById('submit').disable=true: document.getElementById('submit').value='We do what we do...';">
+        <p><input type="text" name="username" placeholder="username" /></p>
+        <p><input type="password" name="password" placeholder="password" /></p>
+        <p><input type="submit" value="Login" /></p>
+        <input type="hidden" name="csrf_token" value=<% csrf_token %>>
+    </form>
+</div>

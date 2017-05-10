@@ -1,0 +1,12 @@
+<!-- Список заметок -->
+<div>
+    <h2>My Notes</h2>
+    <div>
+        <p>Note Title</p>
+                
+        <p>Note text</p>
+
+        <p>Note shared users</p>
+
+        </div>
+    </div>

@@ -1,7 +1,0 @@
-<h2>Create note</h2>
-<form class="note" id='note' name='note' method='post' onsubmit="document.getElementById('submit').disable=true; document.getElementById('submit').value='Posting...';">
-    <p><input type="title" name="title" placeholder="Title" /></p>
-    <p><textarea name="text">Note text</textarea></p>
-    <p><textarea name="users">users</textarea></p>
-    <p><input type="submit" value="Create" /></p>
-</form>
