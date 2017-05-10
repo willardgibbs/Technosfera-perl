@@ -2,57 +2,63 @@
 use 5.010;
 use strict;
 use warnings;
+
 use AnyEvent::HTTP;
 use AnyEvent::Socket;
 use AnyEvent::Handle;
-use DDP;
 
-my $die;
-
-tcp_server "127.0.0.1", 5000, sub {
-	my $c = shift;
-	my $h; $h = AnyEvent::Handle->new(
-		c => $c,
-		on_error => sub {
-			$h->destroy;
-		}
-	);
-	my $reader; $reader = sub {
-		$h->push_read(
-			line => sub {
-				my (undef, $line) = @_;
-				my $url;
-				$url = $1 if ($line =~ /URL (.+)\n/);
-				if ($line eq "HEAD\n") {
-					http_request 
-					HEAD => $url,
-					timeout => 10,
-					sub {
-						my ($body, $hdr) = @_;
-						$h->push_write("OK\n");
-						$h->push_write($hdr);
-						print "HEAD OK\n";
-					};
-				}
-				if ($line eq "GET\n") {
-					http_request 
-						GET => $url,
-						timeout => 10,
-						sub {
-							my ($body, $hdr) = @_;
-							print "GET OK\n";
-							$h->push_write("OK\n");
-							$h->push_write($body);
-						};
-				}
-				if ($line eq "FIN") {
-					die;
-				}
-			}
-		);
-		$reader->();
-	}; $reader->();
+my $urls;
+tcp_server '0.0.0.0', 1234, sub {
+    my $fh = shift;
+    my $handle; $handle = new AnyEvent::Handle
+        fh => $fh,
+        on_error => sub { $handle->destroy; };
+    my $reader; $reader = sub {
+        (undef, my $line) = @_;
+        if ( $line =~ q/^URL (.+)/ ) {
+            $handle->push_write("OK\n");
+            $urls->{$handle} = $1;
+            $handle->push_read(line => $reader);
+        }
+        if ($line =~ q/^FIN$/) {        
+            $handle->push_write("Destroy connection\n");
+            close($fh);
+            $handle->destroy;
+        }
+        if ($line =~ q/^HEAD$/) {
+            http_request 
+                HEAD => $urls->{$handle},
+                sub {
+                    my ($body, $hdr) = @_;
+                    my $headers = '';
+                    if ($hdr->{Status} == 200) {
+                        $handle->push_write("OK\n");
+                        while ( my ($key, $value) = each %$hdr ) { 
+                            $handle->push_write("$key: $value\n"); 
+                        }
+                    } else {
+                        print "\nSorry, $hdr->{Status} in your head request $urls->{$handle}\n";
+                    }
+                    $handle->push_read(line => $reader);
+                };
+        }
+        if ($line =~ q/^GET$/) {
+            http_request 
+                GET => $urls->{$handle},
+                sub {
+                    my ($body, $hdr) = @_;
+                    my $headers = '';
+                    if ($hdr->{Status} == 200) {
+                        $handle->push_write("OK\n");
+                        $handle->push_write("$body\n");
+                    }else {
+                        print "\nSorry, $hdr->{Status} in you get request $urls->{$handle}\n";
+                    }
+                    $handle->push_read(line => $reader);
+                };
+        }
+    };
+    $handle->push_read(line => $reader);
 };
 
 AE::cv->recv;
-
