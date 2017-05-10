@@ -2,7 +2,7 @@ package Local::Row::Simple;
 
 use strict;
 use warnings;
-
+# make get, use it for Reducer
 sub new {
 	my ($class, %param) = @_;
 	my @arr = split(",", $param{str});
@@ -14,4 +14,14 @@ sub new {
 	}
 	return bless \%hash, $class;
 }
+
+sub get {
+	my ($self, $name, $default) = @_;
+	if ($name) {
+		return $self->{$name};
+	} else {
+		return $default;
+	}
+}
+
 1;

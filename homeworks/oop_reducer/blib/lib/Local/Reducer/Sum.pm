@@ -1,8 +1,10 @@
 package Local::Reducer::Sum;
 
+use Local::Row::Simple;
+use Local::Row::JSON;
+use DDP;
 use strict;
 use warnings;
-use DDP;
 
 sub new {
 	my ($class, %params) = @_;
@@ -13,8 +15,8 @@ sub reduce_n {
 	my ($self, $n) = @_;
 	my $sum;
 	for my $i ( $self->{initial_value} .. ($n-1)) {
-		my $lol = $self->{row_class}->new( str => $self->{source}->next);
-		$sum += $lol->{$self->{field}} if defined($lol->{$self->{field}});
+		my $tmp = $self->{row_class}->new( str => $self->{source}->next);
+		$sum += $tmp->get($self->{field}) if defined($self->{field}) and defined($tmp);
 	}
 	$self->{initial_value} = $n;
 	$self->{sum} = $sum;
@@ -25,7 +27,7 @@ sub reduce_all {
 	my ($self) = @_;
 	for my $i ( $self->{initial_value} .. @{$self->{source}->{array}} - 1) {
 		my $tmp = $self->{row_class}->new( str => $self->{source}->next);
-		$self->{sum} += $tmp->{$self->{field}} if defined($tmp->{$self->{field}}) and $tmp->{$self->{field}} =~ m/^\d+$/;
+		$self->{sum} += $tmp->get($self->{field}) if defined($self->{field}) and defined($tmp) and $tmp->get($self->{field}) =~ m/^\d+$/;
 	}
 	$self->{initial_value} = @{$self->{source}->{array}} - 1;
 	return $self->{sum};

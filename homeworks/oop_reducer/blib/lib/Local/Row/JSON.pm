@@ -2,8 +2,8 @@ package Local::Row::JSON;
 
 use strict;
 use warnings;
-use DDP;
-
+#use DDP;
+# make get, use it for Reducer
 sub new {
 	my ($class, %param) = @_;
 	$param{str} =~ /\{(.*)\}/;
@@ -21,6 +21,14 @@ sub new {
 		$hash{$tmp[0]} = $tmp[1];
 	}
 	return bless \%hash, $class;
+}
 
+sub get {
+	my ($self, $name, $default) = @_;
+	if ($name) {
+		return $self->{$name};
+	} else {
+		return $default;
+	}
 }
 1;
