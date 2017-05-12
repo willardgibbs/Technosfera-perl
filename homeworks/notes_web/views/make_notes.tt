@@ -5,5 +5,6 @@
 	    <p><textarea name="text">Note text</textarea></p>
 	    <p><textarea name="users">users</textarea></p>
 	    <p><input type="submit" value="Create" /></p>
+	    <input type="hidden" name="csrf_token" value=<% csrf_token %>>
 	</form>
 </div>

@@ -1,12 +1,12 @@
-<!-- Список заметок -->
 <div>
     <h2>My Notes</h2>
-    <div>
-        <p>Note Title</p>
-                
-        <p>Note text</p>
-
-        <p>Note shared users</p>
-
-        </div>
-    </div>
+    	<% FOR note IN notes %>
+			<div>
+					<li> 
+						<p>Title: <% note.title %></p>
+						<p>Creation Date: <% note.create_time %> </p>
+						<p>Text: <% note.text %></p>
+					</li>
+			</div>
+		<% END %>
+</div>    

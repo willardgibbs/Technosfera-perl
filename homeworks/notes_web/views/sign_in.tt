@@ -1,5 +1,5 @@
 <div class="b-auth b-block">
-    <h2>Create Account</h2>
+    <h2>Sign In</h2>
 	<% IF error_auth %>
 		<center class="error">
 			<ol><li>Error:</li>
@@ -15,4 +15,5 @@
         <p><input type="submit" value="Login" /></p>
         <input type="hidden" name="csrf_token" value=<% csrf_token %>>
     </form>
+    <a href ="/login">Create Account</a>
 </div>
