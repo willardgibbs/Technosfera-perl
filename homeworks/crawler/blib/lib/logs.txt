@@ -1,0 +1,9 @@
+https://github.com/Nikolo/Technosfera-perl/tree/anosov-crawler/book
+https://github.com/Nikolo/Technosfera-perl/tree/anosov-crawler/docs
+https://github.com/Nikolo/Technosfera-perl/tree/anosov-crawler/homeworks
+https://github.com/Nikolo/Technosfera-perl/tree/anosov-crawler/lectures
+https://github.com/Nikolo/Technosfera-perl/tree/anosov-crawler/live
+https://github.com/Nikolo/Technosfera-perl/tree/anosov-crawler/masterclass/fastpaste
+https://github.com/Nikolo/Technosfera-perl/tree/anosov-crawler/projects
+https://github.com/Nikolo/Technosfera-perl/tree/anosov-crawler/quiz
+https://github.com/Nikolo/Technosfera-perl/tree/anosov-crawler/viewer
