@@ -3,6 +3,7 @@ package notes_web;
 use Dancer2;
 use Dancer2::Plugin::Database;
 use Dancer2::Plugin::CSRF;
+use HTML::Entities;
 use Digest::CRC qw/crc64/;
 use DDP;
 
@@ -24,9 +25,9 @@ get "/make_notes" => sub {
 };
 
 post "/make_notes" => sub {
-	my $title = params->{title};
-	my $text = params->{text};
-	my @friends_id = split / /, params->{users};
+	my $title = encode_entities(params->{title}, '<>&"');
+	my $text = encode_entities(params->{text}, '<>&"');
+	my @friends_id = split / /, encode_entities(params->{users}, '<>&"');
 	my $create_time = time;
 	my $sth = database->prepare("INSERT INTO notes (title, text, create_time, user_id) VALUES (?, ?, ?, ?)");
 	$sth->execute($title, $text, $create_time, session("user"));
@@ -38,13 +39,16 @@ post "/make_notes" => sub {
 	redirect "/notes_". $id;
 };
 
-get qr{/note_(\d+)$} => sub { #что-то не так
-	my $id = splat;
+get '/note_*' => sub {
+	my ($tmp) = splat;
+	$tmp =~ /^(\d+)$/;
+	my $id = $1;
 	my $sth_1 = database->prepare('SELECT user_id FROM friends WHERE notes_id = ?');
 	$sth_1->execute($id);
 	my $sth = database->prepare('SELECT create_time, title, text, user_id FROM notes WHERE id = ?');
 	$sth->execute($id);
 	my $sel_res = $sth->fetchrow_hashref();
+	return template 'note' => {error => "Note doesn't exist"} unless $sel_res; 
 	my $flag;
 	$flag = 1 if (session("user") == $sel_res->{user_id});
 	unless ($flag) {
@@ -72,8 +76,9 @@ get "/sign_in" => sub {
 };
 
 post "/sign_in" => sub {
-	my $username = params->{username};
-	my $password = params->{password};
+	my $username = encode_entities(params->{username}, '<>&"');
+	my $password = encode_entities(params->{password}, '<>&"');
+
 	my $sel = database->prepare("SELECT id FROM users WHERE username = ? AND password = ?");
 	$sel->execute($username, $password);
 	my $exist = $sel->fetchrow_arrayref();
