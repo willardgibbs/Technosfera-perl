@@ -1,0 +1,10 @@
+<div>
+	<% IF errors %>
+			<h3>Error:</h3>
+			<ol>
+				<% FOR error IN errors %>
+					<li><% error %></li>
+				<% END %>
+			</ol>
+	<% END %>
+</div>

@@ -11,6 +11,7 @@ our $VERSION = "0.1";
 
 
 our $upload_dir = "notes";
+our @errors_auth;
 
 get "/" => sub {
     redirect("/main_page");
@@ -40,6 +41,7 @@ post "/make_notes" => sub {
 };
 
 get '/note_*' => sub {
+	my @errors;
 	my ($tmp) = splat;
 	$tmp =~ /^(\d+)$/;
 	my $id = $1;
@@ -48,16 +50,23 @@ get '/note_*' => sub {
 	my $sth = database->prepare('SELECT create_time, title, text, user_id FROM notes WHERE id = ?');
 	$sth->execute($id);
 	my $sel_res = $sth->fetchrow_hashref();
-	return template 'note' => {error => "Note doesn't exist"} unless $sel_res; 
+	unless ($sel_res) {
+		push @errors, "Note doesn't exist";
+		return template errors => {errors => \@errors};
+	}
 	my $flag;
-	$flag = 1 if (session("user") == $sel_res->{user_id});
+	$flag = 1 if session("user") == $sel_res->{user_id};
 	unless ($flag) {
 		while (my $tmp = $sth_1->fetchrow_arrayref()) {
 			$flag = 1 if $tmp == session('user');
 		}
 	}
-	return template 'note' => {error => "Permission denied"} unless $flag; 
-	return template 'note' => {text => $sel_res->{text},  create_time => $sel_res->{create_time}, title => $sel_res->{title}};
+	unless ($flag) {
+		push @errors, "Permission denied";
+		return template errors => {errors => \@errors};
+	} else {
+		template 'note' => {text => $sel_res->{text},  create_time => $sel_res->{create_time}, title => $sel_res->{title}};
+	}
 };
 
 get "/last_notes" => sub {
@@ -65,10 +74,9 @@ get "/last_notes" => sub {
 	$notes_select->execute(session("user"));
 	my @notes;
 	while (my $buff = $notes_select->fetchrow_hashref()) {
-		# $buf->{create_time};
 		push @notes, $buff;
 	}
-	return template 'last_notes.tt' => {notes => \@notes, csrf_token => get_csrf_token()};
+	template 'last_notes.tt' => {notes => \@notes, csrf_token => get_csrf_token()};
 };
 
 get "/sign_in" => sub {
@@ -78,7 +86,6 @@ get "/sign_in" => sub {
 post "/sign_in" => sub {
 	my $username = encode_entities(params->{username}, '<>&"');
 	my $password = encode_entities(params->{password}, '<>&"');
-
 	my $sel = database->prepare("SELECT id FROM users WHERE username = ? AND password = ?");
 	$sel->execute($username, $password);
 	my $exist = $sel->fetchrow_arrayref();
@@ -86,7 +93,9 @@ post "/sign_in" => sub {
 		session user => $exist->[0];
 		redirect "/main_page";
 	} else {
-		template sign_in => {errors => "Wrong login or password"};
+		my @errors;
+		push @errors, "Wrong login or password";
+		template errors => {errors => \@errors};
 	}
 };
 
@@ -110,10 +119,19 @@ post "/login" => sub {
 	} else {
 		database->prepare("INSERT INTO users (username, password) VALUES ((?),(?))")->execute($username, $password);
 		$sel->execute($username);
-		session user => $exist->[0];
+		my $coincidence = $sel->fetchrow_arrayref();
+		if (@{$coincidence} > 1) {
+			database->prepare("DELETE FROM users WHERE username = (?)")->execute($username);
+			push @errors_auth, "Try login again";
+		} else {
+			session user => $exist->[0];
+		}
 	}
-	return template login => {errors_auth => \@errors_auth} if (@errors_auth);
-	redirect "/main_page";
+	if (@errors_auth) {
+		template errors => {errors => \@errors_auth};
+	} else {
+		redirect "/main_page";
+	}	
 };
 
 hook before => sub {
