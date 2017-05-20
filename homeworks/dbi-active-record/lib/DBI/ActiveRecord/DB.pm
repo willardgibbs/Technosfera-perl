@@ -168,7 +168,7 @@ sub update {
         my $attr = $obj->meta->get_attribute($_);
         push @bind, ( $attr->serializer ? $attr->serializer->($obj->$_) : $obj->$_ );
     }
-    my $last_insert_id = $self->_update($obj->meta->table_name, $key_field, $key_value, \@fields, \@bind);
+    my $last_insert_id = $self->_update($obj->meta->table_name, $key_field, $key_value, $fields, \@bind);
     return 1;
 }
 

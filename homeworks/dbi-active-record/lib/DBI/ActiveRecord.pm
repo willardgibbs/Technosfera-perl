@@ -112,9 +112,7 @@ sub has_field {
     $params{is} = 'rw';
     $params{trait} = ['DBI::ActiveRecord::Trait::Attribute::Field'];
     my $meta = caller->meta;
-    $meta->add_atribute(
-        $field => /%params
-    );
+    $meta->add_atribute($field, %params);
     push @{$meta->fields()}, $field;
 }
 

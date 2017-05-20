@@ -11,23 +11,23 @@ table 'album';
 has_field id => (
     isa => 'Int',
     auto_increment => 1,
-    index => 'primary',
+    index => 'primary'
 );
 
 has_field name => (
     isa => 'Str',
     index => 'common',
-    default_limit => 100,
+    default_limit => 100
 );
 
 has_field country => (
-    isa => 'Str',
+    isa => 'Str'
 );
 
 has_field create_time => (
     isa => 'DateTime',
     serializer => \&serializer_date,
-    deserializer => \&deserializer_date,
+    deserializer => \&deserializer_date
 );
 
 no DBI::ActiveRecord;

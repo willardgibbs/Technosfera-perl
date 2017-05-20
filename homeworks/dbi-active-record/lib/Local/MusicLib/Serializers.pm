@@ -1,6 +1,7 @@
 package Local::MusicLib::Serializers;
 
 use DateTime;
+use Exporter 'import';
 
 sub serializer_date {
 	$_[0]->format_cldr("YYYY-MM-dd HH:mm:ss");
