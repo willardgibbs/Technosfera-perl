@@ -1,14 +1,5 @@
 <div class="b-auth b-block">
     <h2>Sign In</h2>
-	<% IF error_auth %>
-		<center class="error">
-			<ol><li>Error:</li>
-				<% FOR error IN error_auth %>
-					<li><% error %></li>
-				<% END %>
-			</ol>
-		</center>
-	<% END %>
     <form method = "post" onsubmit="document.getElementById('submit').disable=true: document.getElementById('submit').value='We do what we do...';">
         <p><input type="text" name="username" placeholder="username" /></p>
         <p><input type="password" name="password" placeholder="password" /></p>

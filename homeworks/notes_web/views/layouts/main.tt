@@ -19,6 +19,9 @@
 			<div id="header">
 				<h1><a href="/">Notes</a></h1>
 				<h2>Welcome!</h2>
+				<% IF session.id %>
+        			<p>You're logged in as <% session.username %>. <a href="/logout">Logout</a></p>        			
+    			<% END %>
 			</div>
 			<div id="getting-started"><% content %></div>
 			<div style="clear: both"></div>

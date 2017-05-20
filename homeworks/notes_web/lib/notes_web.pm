@@ -7,11 +7,19 @@ use HTML::Entities;
 use Digest::CRC qw/crc64/;
 use DDP;
 
-our $VERSION = "0.1";
-
-
 our $upload_dir = "notes";
 our @errors_auth;
+
+hook before => sub {
+	redirect '/sign_in' if !session('id') and request->path !~ /^\/sign_in$/ and request->path !~ /^\/login$/;
+	if ( request->is_post() ) {
+		my $csrf_token = param('csrf_token');
+		print $csrf_token;
+		if ( !$csrf_token || !validate_csrf_token($csrf_token) ) {
+			redirect '/';
+		}
+	}
+};
 
 get "/" => sub {
     redirect("/main_page");
@@ -28,50 +36,66 @@ get "/make_notes" => sub {
 post "/make_notes" => sub {
 	my $title = encode_entities(params->{title}, '<>&"');
 	my $text = encode_entities(params->{text}, '<>&"');
-	my @friends_id = split / /, encode_entities(params->{users}, '<>&"');
+	my @friends_id = split /,\s/, encode_entities(params->{users}, '<>&"');
 	my $create_time = time;
 	my $sth = database->prepare("INSERT INTO notes (title, text, create_time, user_id) VALUES (?, ?, ?, ?)");
-	$sth->execute($title, $text, $create_time, session("user"));
 	my $sth_1 = database->prepare("SELECT id FROM notes WHERE title = ? AND text = ? AND create_time = ? AND user_id = ?");
-	$sth_1->execute($title, $text, $create_time, session("user"));
-	my $id = $sth_1->fetchrow_hashref()->{id};
 	my $sth_2 = database->prepare("INSERT INTO friends (notes_id, user_id) VALUES (?, ?)");
-	$sth_2->execute($id, $_) for @friends_id;
-	redirect "/notes_". $id;
+	my $sth_3 = database->prepare("SELECT id FROM users WHERE username = ?");
+
+	$sth->execute($title, $text, $create_time, session("id"));
+	$sth_1->execute($title, $text, $create_time, session("id"));
+
+	my $id = $sth_1->fetchrow_hashref()->{id};
+	
+	for (@friends_id) {
+		$sth_3->execute($_);
+		$sth_2->execute($id, $sth_3->fetchrow_arrayref()->[0]);
+	}
+	redirect "/note_". $id;
 };
 
 get '/note_*' => sub {
 	my @errors;
+	my $sth_1 = database->prepare('SELECT user_id FROM friends WHERE notes_id = ?');
+	my $sth = database->prepare('SELECT create_time, title, text, user_id FROM notes WHERE id = ?');
+	my $sel = database->prepare("SELECT username FROM users WHERE id = (?)");
+
 	my ($tmp) = splat;
 	$tmp =~ /^(\d+)$/;
 	my $id = $1;
-	my $sth_1 = database->prepare('SELECT user_id FROM friends WHERE notes_id = ?');
 	$sth_1->execute($id);
-	my $sth = database->prepare('SELECT create_time, title, text, user_id FROM notes WHERE id = ?');
 	$sth->execute($id);
+
 	my $sel_res = $sth->fetchrow_hashref();
+	my $friends = $sth_1->fetchrow_arrayref();
+	my $friends_name;
+
 	unless ($sel_res) {
 		push @errors, "Note doesn't exist";
 		return template errors => {errors => \@errors};
 	}
+	
 	my $flag;
-	$flag = 1 if session("user") == $sel_res->{user_id};
-	unless ($flag) {
-		while (my $tmp = $sth_1->fetchrow_arrayref()) {
-			$flag = 1 if $tmp == session('user');
-		}
+	$flag = 1 if session("id") == $sel_res->{user_id};
+	for (@$friends) {
+		$flag = 1 if $_ == session('id');
 	}
-	unless ($flag) {
-		push @errors, "Permission denied";
-		return template errors => {errors => \@errors};
-	} else {
-		template 'note' => {text => $sel_res->{text},  create_time => $sel_res->{create_time}, title => $sel_res->{title}};
+	push @errors, "Permission denied" unless defined $flag;
+	return template errors => {errors => \@errors} if @errors;
+
+	for (@$friends) {
+		$sel->execute($_);
+		push @$friends_name, $sel->fetchrow_arrayref()->[0];
 	}
+	$sel->execute($sel_res->{user_id});
+
+	template note => {text => $sel_res->{text},  create_time => $sel_res->{create_time}, title => $sel_res->{title}, friends => $friends_name, username => $sel->fetchrow_arrayref()->[0]};
 };
 
 get "/last_notes" => sub {
 	my $notes_select = database->prepare("SELECT create_time, title, text FROM notes WHERE user_id = ? ORDER BY create_time");
-	$notes_select->execute(session("user"));
+	$notes_select->execute(session("username"));
 	my @notes;
 	while (my $buff = $notes_select->fetchrow_hashref()) {
 		push @notes, $buff;
@@ -83,14 +107,21 @@ get "/sign_in" => sub {
 	template sign_in => { csrf_token => get_csrf_token() };
 };
 
+get "/login" => sub {
+	template login => { csrf_token => get_csrf_token() };
+};
+
 post "/sign_in" => sub {
 	my $username = encode_entities(params->{username}, '<>&"');
 	my $password = encode_entities(params->{password}, '<>&"');
+
 	my $sel = database->prepare("SELECT id FROM users WHERE username = ? AND password = ?");
 	$sel->execute($username, $password);
-	my $exist = $sel->fetchrow_arrayref();
+	my $exist = $sel->fetchrow_hashref();
+
 	if (defined $exist) {
-		session user => $exist->[0];
+		session username => $username;
+		session id => $exist->{id};
 		redirect "/main_page";
 	} else {
 		my @errors;
@@ -99,51 +130,30 @@ post "/sign_in" => sub {
 	}
 };
 
-get "/login" => sub {
-	set layout => "main";
-	template login => { csrf_token => get_csrf_token() };
-};
-
 post "/login" => sub {
-	my $username = params->{username};
-	my $password = params->{password};
+	my $username = encode_entities(params->{username}, '<>&"');
+	my $password = encode_entities(params->{password}, '<>&"');
+
 	my @errors_auth = ();
 	push @errors_auth, "Login or password is null" if (!$username or !$password);
 	push @errors_auth, "Login or password is too large" if (length($username) > 255 or length($password) > 255); 
 	push @errors_auth, "Login and password can contain only english letters and numbers" if $username =~ /\W/ or $password =~ /\W/;
+
 	my $sel = database->prepare("SELECT id FROM users WHERE username = (?)");
 	$sel->execute($username);
-	my $exist = $sel->fetchrow_arrayref();
-	if (defined $exist) {
-		push @errors_auth, "This login alredy exist";
-	} else {
-		database->prepare("INSERT INTO users (username, password) VALUES ((?),(?))")->execute($username, $password);
-		$sel->execute($username);
-		my $coincidence = $sel->fetchrow_arrayref();
-		if (@{$coincidence} > 1) {
-			database->prepare("DELETE FROM users WHERE username = (?)")->execute($username);
-			push @errors_auth, "Try login again";
-		} else {
-			session user => $exist->[0];
-		}
-	}
+	push @errors_auth, "This login alredy exist" if defined $sel->fetchrow_arrayref();
+	
 	if (@errors_auth) {
 		template errors => {errors => \@errors_auth};
 	} else {
-		redirect "/main_page";
-	}	
+		database->prepare("INSERT INTO users (username, password) VALUES ((?),(?))")->execute($username, $password);
+		redirect "/sign_in";	
+	}
 };
 
-hook before => sub {
-	redirect '/sign_in' if !session('user') and request->path !~ /^\/sign_in$/ and request->path !~ /^\/login$/;
-	if ( request->is_post() ) {
-		my $csrf_token = param('csrf_token');
-		print $csrf_token;
-		if ( !$csrf_token || !validate_csrf_token($csrf_token) ) {
-			redirect '/';
-		}
-	}
-
+get '/logout' => sub {
+    context->destroy_session;
+    redirect '/sign_in';
 };
 
 true;

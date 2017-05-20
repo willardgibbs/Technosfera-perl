@@ -1,13 +1,13 @@
 <div>
-	<% IF error %>
-			<li>Error:</li>
-			<li><% error %></li>
-	<% ELSE %>
-    	<h2>Note</h2>
-    	<div>
-			<li><% title %></li>
-			<li><% create_time %></li>
-			<li><% text %></li>
-		</div>
-	<% END %>
+    <h2>Note by <% username %></h2>
+    <div>
+		<li><% title %></li>
+		<li><% create_time %></li>
+		<li><% text %></li>
+		<li>
+			<% FOR friend IN friends %>
+				<% friend %> 
+			<% END %>
+		</li>
+	</div>
 </div>    
