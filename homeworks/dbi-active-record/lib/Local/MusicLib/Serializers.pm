@@ -1,5 +1,8 @@
 package Local::MusicLib::Serializers;
 
+use strict;
+use warnings;
+
 use DateTime;
 use Exporter 'import';
 
@@ -34,4 +37,4 @@ sub deserializer_time {
 	return join ":", $h, $m, $s;
 }
 
-@EXPORT_OK = qw(serializer_date deserializer_date serializer_time deserializer_time);
+our @EXPORT_OK = qw(serializer_date deserializer_date serializer_time deserializer_time);

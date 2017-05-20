@@ -1,5 +1,8 @@
 package Local::MusicLib::Track;
 
+use strict;
+use warnings;
+
 use DBI::ActiveRecord;
 use Local::MusicLib::DB::mysql;
 use Local::MusicLib::Serializers qw(serializer_date deserializer_date serializer_time deserializer_time);

@@ -1,5 +1,8 @@
 package Local::MusicLib::Album;
 
+use strict;
+use warnings;
+
 use DBI::ActiveRecord;
 use Local::MusicLib::DB::mysql;
 
