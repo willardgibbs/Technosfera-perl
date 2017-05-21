@@ -1,11 +1,19 @@
-#!/usr/bin/env perl
-
 use strict;
 use warnings;
+
 use DDP;
-use DBD::mysql;
-use Data::Dumper;
-use JSON::XS;
+use Archive::Zip;
+use Getopt::Long;
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use Local::DB;
+use Local::User;
+use Local::Relation;
+use Local::SocialNetwork
+
+our $VERSION = '1.00';
 
 # Написать программу `bin/social_network.pl`, позволяющую получить следующую информацию:
 #  * Общий список друзей для двух заданных пользователей
@@ -14,40 +22,36 @@ use JSON::XS;
 #  Более формально: требуется найти длину кратчайшего пути 
 #  между заданными двумя пользователями на графе дружбы социльной сети. 
 
+my @flag_friends;
+my $flag_no_friends = "";
+my @flag_handshakes;
+
+GetOptions ("friends=i{2}"   => \@flag_friends,
+			"no_friends"   => \$flag_no_friends,
+			"handshakes=i{2}"   => \@flag_handshakes) or die("Error in command line arguments\n");
+
 my $db_name = 'SocialNetwork';
 my $user_name = 'willardgibbs';
 my $password = 'm5vikhee';
 
-my $user_id_1 = 22;
-my $user_id_2 = 13;
+my $dbh = Local::DB->connect_to_mysql($db_name, $user_name, $password);
 
-my $dbh = DBI->connect("dbi:mysql:dbname=$db_name", $user_name, $password, {AutoCommit => 0, RaiseError => 1});
-
-my $friends = $dbh->prepare("SELECT user.first_name, user.last_name FROM user INNER JOIN (SELECT user_relation.friend_id FROM user_relation WHERE user_relation.user_id = $user_id_1) lol ON user.id = lol.friend_id INNER JOIN (SELECT user_relation.friend_id FROM user_relation WHERE user_relation.user_id = $user_id_2) kek ON user.id = kek.friend_id");
-$friends->execute;
-while (my ($first_name, $last_name) = $friends->fetchrow_array()) {
-	print "$first_name $last_name\n";
+if (@flag_friends) {
+	my $friends = Local::SocialNetwork::friends($dbh, $flag_friends[0], $flag_friends[1]);
+	p $friends;
 }
 
-my $no_friends = $dbh->prepare("SELECT user.first_name, user.last_name FROM user LEFT OUTER JOIN user_relation ON user.id = user_relation.user_id");
-$no_friends->execute;
-
-while (my ($first_name, $last_name) = $no_friends->fetchrow_array()) {
-	print "$first_name $last_name\n";
+if ($flag_no_friends) {
+	my $no_friends = Local::SocialNetwork::no_friends($dbh);
+	if (@$no_friends) {
+		p $no_friends;
+	} else {
+		print "Everybody have friend!\n";
+	}
+	
 }
 
-
-# SELECT
-# 	first_name, last_name
-# FROM 
-# 	user 
-# INNER JOIN 
-# 	SELECT friend_id 
-# 	FROM user_relation 
-# 	WHERE user_id = $user_id_1
-# ON user.id = friend_id
-# INNER JOIN 
-# 	SELECT friend_id 
-# 	FROM user_relation 
-# 	WHERE user_id = $user_id_2
-# ON user.id = friend_id
+if (@flag_handshakes) {
+	my $number_handshakes = Local::SocialNetwork::number_handshakes($dbh, $flag_handshakes[0], $flag_handshakes[1]);
+	p $number_handshakes;
+}
