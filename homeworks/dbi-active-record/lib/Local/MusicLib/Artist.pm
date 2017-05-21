@@ -5,11 +5,12 @@ use warnings;
 
 use DBI::ActiveRecord;
 use Local::MusicLib::DB::mysql;
-use Local::MusicLib::Serializers;
+use Local::MusicLib::Serializers qw(serializer_date deserializer_date serializer_time deserializer_time);
+
 
 db "Local::MusicLib::DB::mysql";
 
-table 'album';
+table 'artists';
 
 has_field id => (
     isa => 'Int',
@@ -24,7 +25,8 @@ has_field name => (
 );
 
 has_field country => (
-    isa => 'Str'
+    isa => 'Str',
+    default_limit => 2,
 );
 
 has_field create_time => (

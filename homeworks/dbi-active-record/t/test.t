@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::Simple tests => 3;
+use Test::Simple tests => 9;
 
 #Написать скрипт для тестирования музыкально библиотеки. Скрипт должен проверить для каждого объекта (трек, альбом, артист) операции вставки, выборки, обновления и удаления. Возмножно вас ждет сюрприз.
 
@@ -9,6 +9,8 @@ use lib "$FindBin::Bin/../lib";
 use Local::MusicLib::Track;
 use Local::MusicLib::Album;
 use Local::MusicLib::Artist;
+
+use DDP;
 
 my $date = DateTime->new (
 	year       => 2017,
@@ -41,13 +43,14 @@ $artist->insert;
 $album->insert;
 $track->insert;
 
-$sel_track = Local::MusicLib::Track->select_by_id($track->id);
-$sel_album = Local::MusicLib::Album->select_by_id($album->id);
-$sel_artist = Local::MusicLib::Artist->select_by_id($artist->id);
+my $sel_track = Local::MusicLib::Track->select_by_id($track->id);
+my $sel_album = Local::MusicLib::Album->select_by_id($album->id);
+my $sel_artist = Local::MusicLib::Artist->select_by_id($artist->id);
 
-p $sel_track;
-p $sel_album;
-p $sel_artist;
+
+ok($sel_track->album_id == 1 && $sel_track->name eq 'Layla' && $sel_track->extension eq "0:7:11", "new, insert, select for tracks");
+ok($sel_album->artist_id == 1 && $sel_album->name eq 'Layla and Other Assorted Love Songs' && $sel_album->year == 1970 && $sel_album->type eq 'soundtrack', "new, insert, select for album");
+ok($sel_artist->name eq 'Eric Clapton' && $sel_artist->country eq "en", "new, insert, select for artist");
 
 $track->extension('00:05:04');
 $track->name("What'd I Say");
@@ -61,13 +64,14 @@ $track->update;
 $album->update;
 $artist->update;
 
-$sel_changed_track = Local::MusicLib::Track->select_by_id($track->id);
-$sel_changed_album = Local::MusicLib::Album->select_by_id($album->id);
-$sel_changed_artist = Local::MusicLib::Artist->select_by_id($artist->id);
+my $sel_changed_track = Local::MusicLib::Track->select_by_id($track->id);
+my $sel_changed_album = Local::MusicLib::Album->select_by_id($album->id);
+my $sel_changed_artist = Local::MusicLib::Artist->select_by_id($artist->id);
 
-p $selected_track;
-p $selected_album;
-p $selected_artist;
+ok($sel_changed_track->album_id == 1 && $sel_changed_track->name eq "What'd I Say" && $sel_changed_track->extension eq "0:5:4", "change track");
+ok($sel_changed_album->artist_id == 1 && $sel_changed_album->name eq "What'd I Say" && $sel_changed_album->year == 1970 && $sel_changed_album->type eq 'single', "change for album");
+ok($sel_changed_artist->name eq 'Ray Charles' && $sel_changed_artist->country eq "en", "change for artist");
+
 
 ok($track->delete, "delete track");
 ok($album->delete, "delete album");

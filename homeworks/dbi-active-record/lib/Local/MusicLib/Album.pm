@@ -6,11 +6,16 @@ use warnings;
 use DBI::ActiveRecord;
 use Local::MusicLib::DB::mysql;
 
-use Local::MusicLib::DB::Serializers;
+use Local::MusicLib::Serializers qw(serializer_date deserializer_date serializer_time deserializer_time);
+use Mouse::Util::TypeConstraints;
+
+enum 'TypeEnum' => qw(single soundtrack compilation regular);
+
+no Mouse::Util::TypeConstraints;
 
 db "Local::MusicLib::DB::mysql";
 
-table 'album';
+table 'albums';
 
 has_field id => (
     isa => 'Int',
@@ -36,10 +41,8 @@ has_field artist_id => (
     default_limit => 100
 );
 
-enum 'TypeEnum' => qw(single soundtrack compilation regular album);
-
 has_field type => (
-    #isa => 'Str',
+    isa => 'Str',
     index => 'common',
     default_limit => 100,
     isa => 'TypeEnum'

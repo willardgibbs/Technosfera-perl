@@ -30,7 +30,7 @@ C<DBI::ActiveRecord> - основной класс, через который п
 =cut
 
 Mouse::Exporter->setup_import_methods(
-    as_is => [qw/db table/],
+    as_is => [qw/db table has_field/],
     also => 'Mouse',
 ); 
 

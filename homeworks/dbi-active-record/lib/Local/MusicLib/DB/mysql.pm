@@ -7,10 +7,10 @@ sub _build_connection_params {
     return [
         'dbi:mysql:dbname=music_lib;host=localhost:1234',
         'willardgibbs',
-        'm5vkhee',
+        'm5vikhee',
         {
 			"RaiseError" => 1, 
-			"AutoCommit" => 0, 
+			"AutoCommit" => 1, 
 			"mysql_enable_utf8" => 1,
         }
     ];

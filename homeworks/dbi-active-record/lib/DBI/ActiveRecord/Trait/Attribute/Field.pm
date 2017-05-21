@@ -29,7 +29,7 @@ subtype 'PositiveInt'
 Тип-перечисление ограничивающий значения атрибута значениями: C<primary>, C<uniq>, C<common>.
 
 =cut
-enum 'IndexEmum' => qw(primary uniq common);
+enum 'IndexEnum' => qw(primary uniq common);
 
 no Mouse::Util::TypeConstraints;
 

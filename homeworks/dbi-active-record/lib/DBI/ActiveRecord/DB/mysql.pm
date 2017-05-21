@@ -99,12 +99,12 @@ sub _update {
 
     my $dbh = $self->connection;
 
-    my $fields_str = join ", ", @$fields;
-    my $placeholders = join ", ", map { "?" } @$fields; 
+    push @$values, $key_value;
+    my $placeholders = join ", ", map { "$_ = ?" } @$fields; 
 
     $dbh->begin_work;
     
-    if($dbh->do("UPDATE $table SET ($fields_str) VALUES ($placeholders) WHERE $key_field = $key_value ", {}, @$values)) {
+    if($dbh->do("UPDATE $table SET $placeholders WHERE $key_field = ? ", {}, @$values)) {
         $dbh->commit; 
     } else {
         $dbh->rollback;
