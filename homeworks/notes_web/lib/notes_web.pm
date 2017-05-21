@@ -11,7 +11,7 @@ our $upload_dir = "notes";
 our @errors_auth;
 
 hook before => sub {
-	redirect '/sign_in' if !session('id') and request->path !~ /^\/sign_in$/ and request->path !~ /^\/login$/;
+	redirect '/sign_in' if !session('user_id') and request->path !~ /^\/sign_in$/ and request->path !~ /^\/login$/;
 	if ( request->is_post() ) {
 		my $csrf_token = param('csrf_token');
 		print $csrf_token;
@@ -43,8 +43,8 @@ post "/make_notes" => sub {
 	my $sth_2 = database->prepare("INSERT INTO friends (notes_id, user_id) VALUES (?, ?)");
 	my $sth_3 = database->prepare("SELECT id FROM users WHERE username = ?");
 
-	$sth->execute($title, $text, $create_time, session("id"));
-	$sth_1->execute($title, $text, $create_time, session("id"));
+	$sth->execute($title, $text, $create_time, session("user_id"));
+	$sth_1->execute($title, $text, $create_time, session("user_id"));
 
 	my $id = $sth_1->fetchrow_hashref()->{id};
 	
@@ -77,9 +77,9 @@ get '/note_*' => sub {
 	}
 	
 	my $flag;
-	$flag = 1 if session("id") == $sel_res->{user_id};
+	$flag = 1 if session("user_id") == $sel_res->{user_id};
 	for (@$friends) {
-		$flag = 1 if $_ == session('id');
+		$flag = 1 if $_ == session('user_id');
 	}
 	push @errors, "Permission denied" unless defined $flag;
 	return template errors => {errors => \@errors} if @errors;
@@ -121,7 +121,7 @@ post "/sign_in" => sub {
 
 	if (defined $exist) {
 		session username => $username;
-		session id => $exist->{id};
+		session user_id => $exist->{id};
 		redirect "/main_page";
 	} else {
 		my @errors;
