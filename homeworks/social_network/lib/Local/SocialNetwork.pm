@@ -49,16 +49,20 @@ sub number_handshakes {
 	my $request1 = $request;
 	my $flag = 1;
 	my %friends;
+	my %visited;
 	$friends{$first_id} = 1;
 	while ($flag) {
 		my $tmp;
-		$request .= "'$_', " for keys %friends;
+		for (keys %friends) {
+			$request .= "'$_', ";
+			$visited{$_} = 1;
+		}
 		substr($request, (length($request) - 2), 2, "");
 		$request .= ")";
 		my $sth = $dbh->prepare($request);
 		$sth->execute();
 		while (my $var = $sth->fetchrow_hashref()) {
-			$tmp->{$var->{friend_id}} = 1;
+			$tmp->{$var->{friend_id}} = 1 unless $visited{$var->{friend_id}};
 			$flag = 0 if $var->{friend_id} == $second_id;
 		}
 		%friends = %$tmp;
