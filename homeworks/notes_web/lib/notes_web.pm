@@ -52,6 +52,7 @@ post "/make_notes" => sub {
 		$sth_3->execute($_);
 		$sth_2->execute($id, $sth_3->fetchrow_arrayref()->[0]);
 	}
+	database->commit;
 	redirect "/note_". $id;
 };
 
@@ -68,7 +69,11 @@ get '/note_*' => sub {
 	$sth->execute($id);
 
 	my $sel_res = $sth->fetchrow_hashref();
-	my $friends = $sth_1->fetchrow_arrayref();
+	my $friends = [];
+	while (my $tmp = $sth_1->fetchrow_arrayref()) {
+		push @$friends, $tmp->[0]; 
+	}
+	
 	my $friends_name;
 
 	unless ($sel_res) {
@@ -89,8 +94,9 @@ get '/note_*' => sub {
 		push @$friends_name, $sel->fetchrow_arrayref()->[0];
 	}
 	$sel->execute($sel_res->{user_id});
-
-	template note => {text => $sel_res->{text},  create_time => $sel_res->{create_time}, title => $sel_res->{title}, friends => $friends_name, username => $sel->fetchrow_arrayref()->[0]};
+	my $username_ex = $sel->fetchrow_arrayref()->[0];
+	database->commit;
+	template note => {text => $sel_res->{text},  create_time => $sel_res->{create_time}, title => $sel_res->{title}, friends => $friends_name, username => $username_ex};
 };
 
 get "/last_notes" => sub {
@@ -100,6 +106,7 @@ get "/last_notes" => sub {
 	while (my $buff = $notes_select->fetchrow_hashref()) {
 		push @notes, $buff;
 	}
+	database->commit;
 	template 'last_notes.tt' => {notes => \@notes, csrf_token => get_csrf_token()};
 };
 
@@ -118,7 +125,7 @@ post "/sign_in" => sub {
 	my $sel = database->prepare("SELECT id FROM users WHERE username = ? AND password = ?");
 	$sel->execute($username, $password);
 	my $exist = $sel->fetchrow_hashref();
-
+	database->commit;
 	if (defined $exist) {
 		session username => $username;
 		session user_id => $exist->{id};
@@ -144,9 +151,11 @@ post "/login" => sub {
 	push @errors_auth, "This login alredy exist" if defined $sel->fetchrow_arrayref();
 	
 	if (@errors_auth) {
+		database->commit;
 		template errors => {errors => \@errors_auth};
 	} else {
 		database->prepare("INSERT INTO users (username, password) VALUES ((?),(?))")->execute($username, $password);
+		database->commit;
 		redirect "/sign_in";	
 	}
 };

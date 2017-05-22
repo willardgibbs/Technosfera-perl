@@ -60,6 +60,6 @@ plugins:
     password: 'm5vikhee'
     dbi_params:
       RaiseError: 1
-      AutoCommit: 1
+      AutoCommit: 0
     on_connect_do: ["SET NAMES 'utf8'", "SET CHARACTER SET 'utf8'"]
     lod_queries: 1
