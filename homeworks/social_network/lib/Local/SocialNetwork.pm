@@ -45,7 +45,26 @@ sub no_friends {
 sub number_handshakes {
 	my ($dbh, $first_id, $second_id) = @_;
 	my $handshakes;
-
+	my $request = "SELECT friend_id FROM user_relation WHERE user_id IN (";
+	my $request1 = $request;
+	my $flag = 1;
+	my %friends;
+	$friends{$first_id} = 1;
+	while ($flag) {
+		my $tmp;
+		$request .= "'$_', " for keys %friends;
+		substr($request, (length($request) - 2), 2, "");
+		$request .= ")";
+		my $sth = $dbh->prepare($request);
+		$sth->execute();
+		while (my $var = $sth->fetchrow_hashref()) {
+			$tmp->{$var->{friend_id}} = 1;
+			$flag = 0 if $var->{friend_id} == $second_id;
+		}
+		%friends = %$tmp;
+		$request = $request1;
+		$handshakes++;
+	}
 	return $handshakes;
 }
 

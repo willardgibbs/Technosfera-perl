@@ -53,6 +53,16 @@ sub select_id {
 	return $user;
 }
 
+# sub select_friends {
+# 	my ($dbh, $ids) = @_;
+
+# 	my @result;
+# 	while (my $tmp = $sth->fetchrow_hashref()) {
+# 		push @result, $tmp->{friend_id};
+# 	}
+# 	return \@result;
+# }
+
 sub add_in_table_users {
 	my ($dbh, $text) = @_;
 	my $users = [];
